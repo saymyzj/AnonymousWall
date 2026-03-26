@@ -10,7 +10,7 @@
     </div>
 
     <!-- Content: adaptive height based on length -->
-    <p class="card-content" :class="{ clamp: post.content.length > 100 }">
+    <p class="card-content" :class="{ clamp: (post.content_preview || post.content || '').length > 100 }">
       {{ post.content_preview || post.content }}
     </p>
 
