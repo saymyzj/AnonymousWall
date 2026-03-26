@@ -1,8 +1,7 @@
 <template>
   <div
     class="post-card"
-    :class="[`bubble-${post.bg_color}`, { 'short-bubble': isShortContent }]"
-    :style="{ transform: `rotate(var(--card-rotation, 0deg))` }"
+    :class="[`bubble-${post.bg_color}`, { compact: isShortContent }]"
     @click="goDetail"
   >
     <!-- Header -->
@@ -14,26 +13,24 @@
       <span class="time">{{ timeAgo(post.created_at) }}</span>
     </div>
 
-    <!-- Content: adaptive height based on length -->
+    <!-- Content -->
     <p class="card-content" :class="{ clamp: contentText.length > 100 }">
       {{ contentText }}
     </p>
 
-    <!-- Tag -->
-    <div class="card-tag">
+    <!-- Footer: tag + stats -->
+    <div class="card-footer">
       <span class="tag-capsule">{{ tagEmoji(post.tag) }} {{ post.tag }}</span>
-    </div>
-
-    <!-- Actions -->
-    <div class="card-actions" @click.stop>
-      <button class="action-btn" :class="{ active: post.is_liked }" @click="toggleLike">
-        <span class="like-icon">{{ post.is_liked ? '♥' : '♡' }}</span>
-        <span>{{ post.like_count }}</span>
-      </button>
-      <button class="action-btn" @click="goDetail">
-        <span>💬</span>
-        <span>{{ post.comment_count }}</span>
-      </button>
+      <div class="card-stats" @click.stop>
+        <button class="stat-btn" :class="{ liked: post.is_liked }" @click="toggleLike">
+          <span class="stat-icon">{{ post.is_liked ? '♥' : '♡' }}</span>
+          {{ post.like_count }}
+        </button>
+        <button class="stat-btn" @click="goDetail">
+          <span class="stat-icon">💬</span>
+          {{ post.comment_count }}
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -102,64 +99,69 @@ async function toggleLike() {
 
 <style scoped>
 .post-card {
-  border-radius: var(--card-radius);
-  padding: var(--space-4);
+  border-radius: 20px;
+  padding: 20px 24px;
   cursor: pointer;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  box-shadow: var(--shadow-sm);
-  animation: bubble-in 0.3s ease-out both;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  transition: transform 0.3s ease-out, box-shadow 0.3s ease-out;
+  animation: bubble-appear 0.4s ease-out both;
+  position: relative;
 }
 
-/* Short content → more rounded, smaller feel */
-.post-card.short-bubble {
-  border-radius: 28px;
-  padding: var(--space-3) var(--space-4);
+/* Short text → more compact and rounded */
+.post-card.compact {
+  padding: 16px 20px;
+  border-radius: 24px;
 }
 
+/* Staggered appearance */
 .post-card:nth-child(1) { animation-delay: 0ms; }
 .post-card:nth-child(2) { animation-delay: 50ms; }
 .post-card:nth-child(3) { animation-delay: 100ms; }
 .post-card:nth-child(4) { animation-delay: 150ms; }
 .post-card:nth-child(5) { animation-delay: 200ms; }
 .post-card:nth-child(6) { animation-delay: 250ms; }
+.post-card:nth-child(7) { animation-delay: 300ms; }
+.post-card:nth-child(8) { animation-delay: 350ms; }
 
-@keyframes bubble-in {
+@keyframes bubble-appear {
   from {
     opacity: 0;
-    transform: translateY(20px) rotate(var(--card-rotation, 0deg));
+    transform: translateY(20px) scale(0.97);
   }
   to {
     opacity: 1;
-    transform: translateY(0) rotate(var(--card-rotation, 0deg));
+    transform: translateY(0) scale(1);
   }
 }
 
-/* Hover: bubble float up effect */
+/* Hover: float up with deeper shadow */
 .post-card:hover {
-  transform: translateY(-4px) scale(1.01) rotate(0deg) !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  transform: translateY(-6px);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.12);
 }
 
 .post-card:active {
-  transform: scale(0.98) !important;
+  transform: translateY(-2px) scale(0.99);
 }
 
+/* Header */
 .card-header {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  margin-bottom: var(--space-3);
+  gap: 8px;
+  margin-bottom: 12px;
 }
 
 .avatar-sm {
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   flex-shrink: 0;
 }
@@ -174,78 +176,86 @@ async function toggleLike() {
   font-size: 12px;
   color: var(--text-secondary);
   margin-left: auto;
+  opacity: 0.7;
 }
 
-/* Content: natural height for short text, clamped for long text */
+/* Content */
 .card-content {
   font-size: 15px;
   line-height: 24px;
   color: var(--text-primary);
-  margin-bottom: var(--space-3);
+  margin-bottom: 12px;
   word-break: break-word;
   white-space: pre-wrap;
 }
 
 .card-content.clamp {
   display: -webkit-box;
-  -webkit-line-clamp: 5;
+  -webkit-line-clamp: 4;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
-.card-tag {
-  margin-bottom: var(--space-3);
+/* Footer */
+.card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .tag-capsule {
   display: inline-block;
-  padding: 4px 10px;
+  padding: 3px 10px;
   border-radius: 999px;
   font-size: 11px;
   background: rgba(0, 0, 0, 0.06);
   color: var(--text-secondary);
 }
 
-.card-actions {
+.card-stats {
   display: flex;
-  gap: var(--space-6);
+  gap: 12px;
 }
 
-.action-btn {
+.stat-btn {
   display: flex;
   align-items: center;
-  gap: var(--space-1);
+  gap: 4px;
   background: none;
   border: none;
   cursor: pointer;
   font-size: 12px;
   color: var(--text-secondary);
-  padding: 4px 0;
-  transition: color 0.2s ease;
+  padding: 2px 0;
+  opacity: 0.6;
+  transition: all 0.2s ease;
 }
 
-.action-btn:hover {
+.post-card:hover .stat-btn {
+  opacity: 1;
+}
+
+.stat-btn:hover {
   color: var(--brand-primary);
   transform: none;
-  box-shadow: none;
 }
 
-.action-btn.active {
+.stat-btn.liked {
   color: var(--brand-secondary);
+  opacity: 1;
 }
 
-.action-btn.active .like-icon {
-  animation: like-bounce 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+.stat-btn.liked .stat-icon {
+  animation: like-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-@keyframes like-bounce {
+@keyframes like-pop {
   0% { transform: scale(1); }
-  30% { transform: scale(1.4); }
-  60% { transform: scale(0.9); }
+  40% { transform: scale(1.4); }
   100% { transform: scale(1); }
 }
 
-.action-btn span:first-child {
-  font-size: 18px;
+.stat-icon {
+  font-size: 16px;
 }
 </style>

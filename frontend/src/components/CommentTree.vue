@@ -6,7 +6,7 @@
       @like="$emit('like', comment.id)"
       @delete="$emit('delete', comment.id)"
     />
-    <div v-if="comment.children?.length" class="children-group" :class="{ nested: depth < 2 }">
+    <div v-if="comment.children?.length" class="children" :class="{ nested: depth < 2 }">
       <CommentTree
         v-for="child in comment.children"
         :key="child.id"
@@ -31,9 +31,9 @@ defineEmits(['reply', 'like', 'delete'])
 </script>
 
 <style scoped>
-.children-group.nested {
-  margin-left: 20px;
+.children.nested {
+  margin-left: 16px;
   padding-left: 12px;
-  border-left: 2px solid var(--divider);
+  border-left: 3px solid var(--brand-primary-light);
 }
 </style>

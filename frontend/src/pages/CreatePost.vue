@@ -1,7 +1,7 @@
 <template>
   <div class="create-page">
     <div class="create-header">
-      <button class="back-btn" @click="$router.back()">←</button>
+      <button class="back-btn" @click="$router.back()">← 返回</button>
       <h2>发帖</h2>
       <button class="publish-btn" :disabled="!canPublish || loading" @click="publish">
         {{ loading ? '发布中...' : '发布' }}
@@ -9,14 +9,13 @@
     </div>
 
     <div class="create-grid">
-      <!-- Left: Edit Area -->
-      <div class="edit-column">
-        <div class="edit-card">
+      <!-- Left: Editor -->
+      <div class="editor-col">
+        <div class="editor-card">
           <textarea
             v-model="content"
             placeholder="说点什么吧..."
             maxlength="500"
-            rows="12"
           ></textarea>
           <div class="char-count">{{ content.length }}/500</div>
         </div>
@@ -51,10 +50,10 @@
           </div>
         </div>
 
-        <!-- Future Features Placeholder -->
+        <!-- Future Features -->
         <div class="section">
           <h3>更多选项</h3>
-          <div class="future-options">
+          <div class="future-row">
             <button class="future-btn" disabled title="即将上线">📊 投票</button>
             <button class="future-btn" disabled title="即将上线">💣 阅后即焚</button>
             <button class="future-btn" disabled title="即将上线">📎 附件</button>
@@ -65,23 +64,25 @@
       </div>
 
       <!-- Right: Live Preview -->
-      <div class="preview-column">
-        <h3 class="preview-title">预览</h3>
-        <div class="preview-card" :class="`bubble-${bgColor}`">
-          <div class="preview-header">
-            <div class="preview-avatar">?</div>
-            <span class="preview-nick">匿名用户</span>
-            <span class="preview-time">刚刚</span>
+      <div class="preview-col">
+        <h3 class="preview-label">预览效果</h3>
+        <div class="preview-bubble" :class="`bubble-${bgColor}`">
+          <div class="pv-header">
+            <div class="pv-avatar">?</div>
+            <div class="pv-meta">
+              <span class="pv-nick">匿名用户</span>
+              <span class="pv-time">刚刚</span>
+            </div>
           </div>
-          <p class="preview-content" :class="{ placeholder: !content }">
-            {{ content || '在左侧输入内容，预览将在这里实时显示...' }}
+          <p class="pv-content" :class="{ empty: !content }">
+            {{ content || '在左侧输入内容，预览将实时显示...' }}
           </p>
-          <div v-if="tag" class="preview-tag">
-            <span class="tag-capsule">{{ tagEmoji(tag) }} {{ tag }}</span>
-          </div>
-          <div class="preview-actions">
-            <span>♡ 0</span>
-            <span>💬 0</span>
+          <div class="pv-footer">
+            <span v-if="tag" class="tag-capsule">{{ tagEmoji(tag) }} {{ tag }}</span>
+            <div class="pv-stats">
+              <span>♡ 0</span>
+              <span>💬 0</span>
+            </div>
           </div>
         </div>
       </div>
@@ -147,7 +148,7 @@ async function publish() {
 
 <style scoped>
 .create-page {
-  max-width: 900px;
+  max-width: 960px;
   margin: 0 auto;
 }
 
@@ -155,26 +156,27 @@ async function publish() {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: var(--space-5);
+  margin-bottom: 28px;
 }
 
 .create-header h2 {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 600;
 }
 
 .back-btn {
   background: none;
   border: none;
-  font-size: 24px;
+  font-size: 14px;
   cursor: pointer;
-  color: var(--text-primary);
-  transition: transform 0.2s ease;
+  color: var(--text-secondary);
+  font-weight: 500;
+  transition: color 0.2s;
 }
 
 .back-btn:hover {
-  transform: translateX(-2px);
-  box-shadow: none;
+  color: var(--brand-primary);
+  transform: none;
 }
 
 .publish-btn {
@@ -182,7 +184,7 @@ async function publish() {
   color: white;
   border: none;
   border-radius: 20px;
-  padding: 8px 24px;
+  padding: 10px 28px;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -190,51 +192,41 @@ async function publish() {
 }
 
 .publish-btn:hover:not(:disabled) {
-  filter: brightness(1.1);
   transform: translateY(-2px);
   box-shadow: 0 4px 16px rgba(124, 92, 252, 0.3);
 }
 
 .publish-btn:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
 }
 
-/* Dual-column grid */
+/* Grid */
 .create-grid {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--space-5);
+  grid-template-columns: 1fr 1fr;
+  gap: 36px;
+  align-items: start;
 }
 
-@media (min-width: 768px) {
-  .create-grid {
-    grid-template-columns: 1fr 1fr;
-    gap: var(--space-8);
-    align-items: start;
-  }
-
-  .preview-column {
-    position: sticky;
-    top: 80px;
-  }
+/* Editor */
+.editor-card {
+  background: white;
+  border-radius: 20px;
+  padding: 20px;
+  margin-bottom: 24px;
+  border: 1.5px solid var(--divider);
+  transition: border-color 0.2s;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
 }
 
-/* Edit Area */
-.edit-card {
-  background: var(--card-bg);
-  border-radius: var(--card-radius);
-  padding: var(--space-4);
-  margin-bottom: var(--space-5);
-  border: 1px solid var(--divider);
-  transition: border-color 0.2s ease;
-}
-
-.edit-card:focus-within {
+.editor-card:focus-within {
   border-color: var(--brand-primary);
+  box-shadow: 0 0 0 3px rgba(124, 92, 252, 0.08);
 }
 
-.edit-card textarea {
+.editor-card textarea {
   width: 100%;
+  min-height: 280px;
   background: transparent;
   border: none;
   outline: none;
@@ -243,38 +235,37 @@ async function publish() {
   color: var(--text-primary);
   resize: none;
   font-family: inherit;
-  min-height: 240px;
 }
 
 .char-count {
   text-align: right;
   font-size: 12px;
-  color: var(--text-secondary);
-  margin-top: var(--space-2);
+  color: var(--text-placeholder);
+  margin-top: 8px;
 }
 
 .section {
-  margin-bottom: var(--space-5);
+  margin-bottom: 24px;
 }
 
 .section h3 {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
-  margin-bottom: var(--space-3);
+  margin-bottom: 12px;
   color: var(--text-primary);
 }
 
 .tag-options {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2);
+  gap: 8px;
 }
 
 .tag-option {
-  padding: 8px 16px;
+  padding: 7px 16px;
   border-radius: 999px;
-  border: 1px solid var(--divider);
-  background: var(--card-bg);
+  border: 1.5px solid var(--divider);
+  background: white;
   color: var(--text-secondary);
   font-size: 13px;
   cursor: pointer;
@@ -284,19 +275,17 @@ async function publish() {
 .tag-option:hover:not(.active) {
   border-color: var(--brand-primary);
   color: var(--brand-primary);
-  background: var(--brand-primary-light);
 }
 
 .tag-option.active {
   background: var(--brand-primary);
   color: white;
   border-color: var(--brand-primary);
-  transform: scale(1.05);
 }
 
 .color-options {
   display: flex;
-  gap: var(--space-3);
+  gap: 12px;
   flex-wrap: wrap;
 }
 
@@ -310,8 +299,7 @@ async function publish() {
 }
 
 .color-dot:hover {
-  transform: scale(1.2);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transform: scale(1.3);
 }
 
 .color-dot.active {
@@ -320,46 +308,56 @@ async function publish() {
   transform: scale(1.15);
 }
 
-/* Future options placeholder */
-.future-options {
+.future-row {
   display: flex;
-  gap: var(--space-2);
+  gap: 8px;
   flex-wrap: wrap;
 }
 
 .future-btn {
-  padding: 8px 16px;
+  padding: 7px 16px;
   border-radius: 999px;
-  border: 1px dashed var(--divider);
+  border: 1.5px dashed var(--divider);
   background: transparent;
   color: var(--text-placeholder);
   font-size: 13px;
   cursor: not-allowed;
 }
 
-/* Preview Column */
-.preview-title {
-  font-size: 15px;
+.error-msg {
+  color: var(--color-error);
+  font-size: 13px;
+  text-align: center;
+}
+
+/* Preview */
+.preview-col {
+  position: sticky;
+  top: 88px;
+}
+
+.preview-label {
+  font-size: 14px;
   font-weight: 600;
-  margin-bottom: var(--space-3);
+  margin-bottom: 12px;
   color: var(--text-secondary);
 }
 
-.preview-card {
-  border-radius: var(--card-radius);
-  padding: var(--space-5);
-  box-shadow: var(--shadow-md);
+.preview-bubble {
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   transition: all 0.3s ease;
 }
 
-.preview-header {
+.pv-header {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  margin-bottom: var(--space-3);
+  gap: 10px;
+  margin-bottom: 14px;
 }
 
-.preview-avatar {
+.pv-avatar {
   width: 36px;
   height: 36px;
   border-radius: 50%;
@@ -372,51 +370,55 @@ async function publish() {
   font-weight: 600;
 }
 
-.preview-nick {
+.pv-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pv-nick {
   font-size: 13px;
   font-weight: 600;
-  color: var(--text-primary);
 }
 
-.preview-time {
+.pv-time {
   font-size: 12px;
   color: var(--text-secondary);
-  margin-left: auto;
 }
 
-.preview-content {
+.pv-content {
   font-size: 15px;
   line-height: 24px;
-  margin-bottom: var(--space-3);
+  margin-bottom: 14px;
   word-break: break-word;
   white-space: pre-wrap;
 }
 
-.preview-content.placeholder {
+.pv-content.empty {
   color: var(--text-placeholder);
   font-style: italic;
 }
 
-.preview-tag { margin-bottom: var(--space-3); }
+.pv-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
 .tag-capsule {
   display: inline-block;
-  padding: 4px 10px;
+  padding: 3px 10px;
   border-radius: 999px;
   font-size: 11px;
   background: rgba(0, 0, 0, 0.06);
   color: var(--text-secondary);
 }
 
-.preview-actions {
+.pv-stats {
   display: flex;
-  gap: var(--space-6);
+  gap: 14px;
   font-size: 13px;
   color: var(--text-secondary);
-}
-
-.error-msg {
-  color: var(--color-error);
-  font-size: 13px;
-  text-align: center;
+  opacity: 0.6;
 }
 </style>

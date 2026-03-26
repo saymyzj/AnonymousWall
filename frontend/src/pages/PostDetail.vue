@@ -1,15 +1,17 @@
 <template>
   <div class="detail-page" v-if="post">
     <div class="detail-grid">
-      <!-- Left: Post Content -->
+      <!-- Left: Post Bubble -->
       <div class="post-column">
         <div class="post-bubble" :class="`bubble-${post.bg_color}`">
           <div class="post-header">
-            <div class="avatar-sm" :style="{ background: avatarColor }">
+            <div class="avatar" :style="{ background: avatarColor }">
               {{ avatarText }}
             </div>
-            <span class="nickname">{{ post.identity?.nickname || '匿名用户' }}</span>
-            <span class="time">{{ timeAgo(post.created_at) }}</span>
+            <div class="post-meta">
+              <span class="nickname">{{ post.identity?.nickname || '匿名用户' }}</span>
+              <span class="time">{{ timeAgo(post.created_at) }}</span>
+            </div>
           </div>
           <p class="post-content">{{ post.content }}</p>
           <div class="post-tag">
@@ -17,18 +19,30 @@
           </div>
           <div class="post-actions">
             <button class="action-btn" :class="{ active: post.is_liked }" @click="toggleLike">
-              {{ post.is_liked ? '♥' : '♡' }} {{ post.like_count }}
+              <span class="action-icon">{{ post.is_liked ? '♥' : '♡' }}</span>
+              <span>{{ post.like_count }}</span>
             </button>
-            <span class="action-btn">💬 {{ post.comment_count }}</span>
-            <button v-if="post.is_author" class="action-btn delete" @click="deletePost">🗑 删除</button>
+            <span class="action-btn">
+              <span class="action-icon">💬</span>
+              <span>{{ post.comment_count }}</span>
+            </span>
+            <button class="action-btn disabled">
+              <span class="action-icon">↗</span>
+              <span>分享</span>
+            </button>
+            <button v-if="post.is_author" class="action-btn delete" @click="deletePost">
+              <span class="action-icon">🗑</span>
+              <span>删除</span>
+            </button>
           </div>
         </div>
       </div>
 
       <!-- Right: Comments -->
       <div class="comments-column">
-        <div class="comments-section">
-          <h3>评论 ({{ post.comment_count }})</h3>
+        <div class="comments-panel">
+          <h3 class="comments-title">评论 ({{ post.comment_count }})</h3>
+
           <div v-if="commentTree.length > 0" class="comment-list">
             <CommentTree
               v-for="c in commentTree"
@@ -46,31 +60,32 @@
           <div v-if="authStore.isLoggedIn && !authStore.isVerified" class="verify-hint">
             账号审核中，通过后即可评论
           </div>
-          <div class="comment-input-card" v-if="authStore.isLoggedIn && authStore.isVerified">
+          <div class="comment-input" v-if="authStore.isLoggedIn && authStore.isVerified">
             <div v-if="replyTo" class="reply-hint">
               回复 {{ replyTo.is_post_author ? '楼主' : replyTo.anon_label }}
-              <button @click="replyTo = null">×</button>
+              <button class="reply-cancel" @click="replyTo = null">×</button>
             </div>
-            <div class="input-row">
+            <div class="input-row" :class="{ expanded: inputExpanded }">
               <textarea
-                ref="commentInput"
+                ref="commentInputEl"
                 v-model="commentText"
                 placeholder="写评论..."
                 maxlength="200"
                 rows="1"
-                class="comment-textarea"
                 @focus="inputExpanded = true"
                 @blur="onInputBlur"
                 @keydown.enter.exact.prevent="submitComment"
               ></textarea>
-              <button class="send-btn" :disabled="!commentText.trim()" @click="submitComment">发送</button>
+              <button class="send-btn" :disabled="!commentText.trim()" @click="submitComment">
+                发送
+              </button>
             </div>
           </div>
         </div>
       </div>
     </div>
   </div>
-  <div v-else class="loading">
+  <div v-else class="loading-state">
     <van-loading type="spinner" color="var(--brand-primary)" />
   </div>
 </template>
@@ -93,45 +108,32 @@ const flatComments = ref<any[]>([])
 const commentText = ref('')
 const replyTo = ref<any>(null)
 const inputExpanded = ref(false)
-const commentInput = ref<HTMLTextAreaElement>()
+const commentInputEl = ref<HTMLTextAreaElement>()
 
 function onInputBlur() {
-  if (!commentText.value.trim()) {
-    inputExpanded.value = false
-  }
+  if (!commentText.value.trim()) inputExpanded.value = false
 }
 
-// Build comment tree from flat list
 const commentTree = computed(() => {
   const list = flatComments.value
   if (!list.length) return []
-
   const map = new Map<number, any>()
   const roots: any[] = []
-
-  for (const c of list) {
-    map.set(c.id, { ...c, children: [] })
-  }
-
+  for (const c of list) map.set(c.id, { ...c, children: [] })
   for (const c of list) {
     const node = map.get(c.id)!
     if (c.parent) {
       const parentNode = map.get(c.parent)
-      if (parentNode) {
-        parentNode.children.push(node)
-      } else {
-        roots.push(node)
-      }
+      if (parentNode) parentNode.children.push(node)
+      else roots.push(node)
     } else {
       roots.push(node)
     }
   }
-
   return roots
 })
 
 const postId = Number(route.params.id)
-
 const avatarColor = ref('#777')
 const avatarText = ref('?')
 
@@ -196,7 +198,7 @@ async function toggleCommentLike(commentId: number) {
 function startReply(comment: any) {
   replyTo.value = comment
   inputExpanded.value = true
-  nextTick(() => commentInput.value?.focus())
+  nextTick(() => commentInputEl.value?.focus())
 }
 
 async function submitComment() {
@@ -243,147 +245,172 @@ onMounted(() => {
   margin: 0 auto;
 }
 
-/* Desktop: dual-column grid */
 .detail-grid {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--space-5);
+  grid-template-columns: 3fr 2fr;
+  gap: 32px;
+  align-items: start;
 }
 
-@media (min-width: 768px) {
-  .detail-grid {
-    grid-template-columns: 3fr 2fr;
-    gap: var(--space-8);
-    align-items: start;
-  }
-
-  .comments-column {
-    position: sticky;
-    top: 80px;
-    max-height: calc(100vh - 100px);
-    overflow-y: auto;
-  }
-}
-
+/* Post Bubble */
 .post-bubble {
-  border-radius: var(--card-radius);
-  padding: var(--space-5);
+  border-radius: 24px;
+  padding: 28px 32px;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.06);
 }
 
 .post-header {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  margin-bottom: var(--space-3);
+  gap: 12px;
+  margin-bottom: 16px;
 }
 
-.avatar-sm {
-  width: 40px;
-  height: 40px;
+.avatar {
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
+  font-size: 16px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.post-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.nickname {
   font-size: 15px;
   font-weight: 600;
 }
 
-.nickname { font-size: 14px; font-weight: 600; }
-.time { font-size: 12px; color: var(--text-secondary); margin-left: auto; }
+.time {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
 
 .post-content {
   font-size: 16px;
-  line-height: 26px;
-  margin-bottom: var(--space-4);
+  line-height: 28px;
+  margin-bottom: 16px;
   word-break: break-word;
   white-space: pre-wrap;
 }
 
-.post-tag { margin-bottom: var(--space-3); }
+.post-tag { margin-bottom: 16px; }
 .tag-capsule {
   display: inline-block;
   padding: 4px 12px;
   border-radius: 999px;
   font-size: 12px;
   background: rgba(0, 0, 0, 0.06);
+  color: var(--text-secondary);
 }
 
 .post-actions {
   display: flex;
-  gap: var(--space-6);
+  gap: 20px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 .action-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 13px;
   color: var(--text-secondary);
+  padding: 6px 0;
   transition: color 0.2s ease;
 }
-.action-btn:hover { color: var(--brand-primary); transform: none; box-shadow: none; }
-.action-btn.active { color: var(--brand-secondary); }
-.action-btn.delete { color: var(--color-error); }
 
-/* Comments Section */
-.comments-section {
-  background: var(--card-bg);
-  border-radius: 20px;
-  padding: var(--space-5);
+.action-btn:hover { color: var(--brand-primary); transform: none; }
+.action-btn.active { color: var(--brand-secondary); }
+.action-btn.delete:hover { color: var(--color-error); }
+.action-btn.disabled { cursor: default; opacity: 0.4; }
+.action-icon { font-size: 18px; }
+
+/* Comments Panel */
+.comments-column {
+  position: sticky;
+  top: 88px;
+  max-height: calc(100vh - 108px);
+  overflow-y: auto;
 }
 
-.comments-section h3 {
+.comments-panel {
+  background: white;
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+}
+
+.comments-title {
   font-size: 16px;
-  margin-bottom: var(--space-4);
   font-weight: 600;
+  margin-bottom: 16px;
 }
 
 .no-comments {
   text-align: center;
-  color: var(--text-secondary);
-  padding: var(--space-6) 0;
+  color: var(--text-placeholder);
+  padding: 32px 0;
   font-size: 14px;
 }
 
-/* Inline Comment Input — inside comments section, not fixed bottom */
-.comment-input-card {
-  margin-top: var(--space-4);
-  padding: var(--space-3);
-  background: rgba(0, 0, 0, 0.03);
-  border-radius: 16px;
-  border: 1px solid var(--divider);
-  transition: border-color 0.2s ease;
-}
-
-.comment-input-card:focus-within {
-  border-color: var(--brand-primary);
+/* Comment Input */
+.comment-input {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--divider);
 }
 
 .reply-hint {
   font-size: 12px;
   color: var(--brand-primary);
-  margin-bottom: var(--space-2);
+  margin-bottom: 8px;
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: 8px;
 }
 
-.reply-hint button {
+.reply-cancel {
   background: none;
   border: none;
   color: var(--text-secondary);
   cursor: pointer;
   font-size: 16px;
+  padding: 0;
 }
 
 .input-row {
   display: flex;
-  gap: var(--space-2);
+  gap: 8px;
   align-items: flex-end;
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: 16px;
+  padding: 8px 12px;
+  border: 1.5px solid transparent;
+  transition: all 0.2s ease;
 }
 
-.comment-textarea {
+.input-row:focus-within {
+  border-color: var(--brand-primary);
+  background: white;
+  box-shadow: 0 0 0 3px rgba(124, 92, 252, 0.08);
+}
+
+.input-row textarea {
   flex: 1;
   border: none;
   background: transparent;
@@ -393,11 +420,16 @@ onMounted(() => {
   resize: none;
   line-height: 20px;
   min-height: 20px;
-  max-height: 120px;
+  max-height: 100px;
   font-family: inherit;
+  transition: min-height 0.2s ease;
 }
 
-.comment-textarea::placeholder {
+.input-row.expanded textarea {
+  min-height: 60px;
+}
+
+.input-row textarea::placeholder {
   color: var(--text-placeholder);
 }
 
@@ -405,9 +437,10 @@ onMounted(() => {
   background: var(--brand-primary);
   color: white;
   border: none;
-  border-radius: 16px;
+  border-radius: 12px;
   padding: 6px 16px;
   font-size: 13px;
+  font-weight: 500;
   cursor: pointer;
   flex-shrink: 0;
   transition: all 0.2s ease;
@@ -415,24 +448,25 @@ onMounted(() => {
 
 .send-btn:hover:not(:disabled) {
   filter: brightness(1.1);
+  transform: none;
 }
 
 .send-btn:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
 }
 
 .verify-hint {
-  margin-top: var(--space-4);
+  margin-top: 16px;
   text-align: center;
-  padding: var(--space-3);
+  padding: 12px;
   background: rgba(0, 0, 0, 0.03);
   border-radius: 12px;
   font-size: 13px;
   color: var(--text-secondary);
 }
 
-.loading {
+.loading-state {
   text-align: center;
-  padding: var(--space-10) 0;
+  padding: 64px 0;
 }
 </style>

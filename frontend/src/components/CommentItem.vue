@@ -1,5 +1,5 @@
 <template>
-  <div class="comment-item">
+  <div class="comment-bubble">
     <div class="comment-header">
       <div class="anon-avatar" :style="{ background: comment.anon_color }">
         {{ comment.anon_label?.charAt(2) || 'A' }}
@@ -18,11 +18,11 @@
     </div>
 
     <div class="comment-actions">
-      <button class="action-btn" :class="{ active: comment.is_liked }" @click="$emit('like', comment.id)">
+      <button class="act-btn" :class="{ active: comment.is_liked }" @click="$emit('like', comment.id)">
         {{ comment.is_liked ? '♥' : '♡' }} {{ comment.like_count }}
       </button>
-      <button class="action-btn" @click="$emit('reply', comment)">↩ 回复</button>
-      <button v-if="comment.is_author" class="action-btn delete" @click="$emit('delete', comment.id)">删除</button>
+      <button class="act-btn" @click="$emit('reply', comment)">↩ 回复</button>
+      <button v-if="comment.is_author" class="act-btn danger" @click="$emit('delete', comment.id)">删除</button>
     </div>
   </div>
 </template>
@@ -41,35 +41,34 @@ function timeAgo(dateStr: string) {
 </script>
 
 <style scoped>
-/* Each comment is a mini bubble */
-.comment-item {
-  padding: var(--space-3);
-  margin-bottom: var(--space-2);
+.comment-bubble {
+  padding: 12px 14px;
+  margin-bottom: 8px;
   background: rgba(0, 0, 0, 0.03);
-  border-radius: 16px;
+  border-radius: 14px;
   transition: background 0.2s ease;
 }
 
-.comment-item:hover {
+.comment-bubble:hover {
   background: rgba(0, 0, 0, 0.05);
 }
 
 .comment-header {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  margin-bottom: var(--space-2);
+  gap: 8px;
+  margin-bottom: 6px;
 }
 
 .anon-avatar {
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
 }
 
@@ -79,9 +78,10 @@ function timeAgo(dateStr: string) {
 }
 
 .comment-time {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text-secondary);
   margin-left: auto;
+  opacity: 0.6;
 }
 
 .comment-body {
@@ -98,31 +98,36 @@ function timeAgo(dateStr: string) {
 
 .comment-actions {
   display: flex;
-  gap: var(--space-4);
-  margin-top: var(--space-2);
+  gap: 16px;
+  margin-top: 6px;
 }
 
-.action-btn {
+.act-btn {
   background: none;
   border: none;
   font-size: 12px;
   color: var(--text-secondary);
   cursor: pointer;
   padding: 2px 0;
-  transition: color 0.2s ease;
+  opacity: 0.5;
+  transition: all 0.2s ease;
 }
 
-.action-btn:hover {
+.comment-bubble:hover .act-btn {
+  opacity: 1;
+}
+
+.act-btn:hover {
   color: var(--brand-primary);
   transform: none;
-  box-shadow: none;
 }
 
-.action-btn.active {
+.act-btn.active {
   color: var(--brand-secondary);
+  opacity: 1;
 }
 
-.action-btn.delete {
+.act-btn.danger:hover {
   color: var(--color-error);
 }
 </style>

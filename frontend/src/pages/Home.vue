@@ -36,28 +36,27 @@
 
     <!-- Search Hint -->
     <div v-if="filters.search" class="search-hint">
-      搜索"{{ filters.search }}"的结果
-      <button @click="clearSearch">清除</button>
+      搜索 "{{ filters.search }}" 的结果
+      <button @click="clearSearch">清除搜索</button>
     </div>
 
-    <!-- Post List -->
-    <div class="post-list">
+    <!-- Post Masonry Grid -->
+    <div class="post-grid">
       <PostCard
-        v-for="(post, index) in postsStore.posts"
+        v-for="post in postsStore.posts"
         :key="post.id"
         :post="post"
-        :style="cardStyle(index)"
       />
     </div>
 
     <!-- Loading -->
-    <div v-if="postsStore.loading" class="loading">
+    <div v-if="postsStore.loading" class="status-area">
       <van-loading type="spinner" color="var(--brand-primary)" />
     </div>
 
     <!-- Empty -->
-    <div v-if="!postsStore.loading && postsStore.posts.length === 0" class="empty">
-      <p>还没有内容，快来发第一条帖子吧</p>
+    <div v-if="!postsStore.loading && postsStore.posts.length === 0" class="status-area">
+      <p class="empty-text">还没有内容，快来发第一条帖子吧</p>
     </div>
 
     <!-- Load More Trigger -->
@@ -88,13 +87,6 @@ const sortOptions = [
   { label: '最新', value: 'latest' },
   { label: '最热', value: 'hot' },
 ]
-
-// Micro-rotation offsets for bubble feel
-function cardStyle(index: number) {
-  const rotations = [0.3, -0.5, 0.2, -0.3, 0.5, -0.2, 0.4, -0.4]
-  const rot = rotations[index % rotations.length]
-  return { '--card-rotation': `${rot}deg` }
-}
 
 function selectTag(value: string | undefined) {
   postsStore.setFilter('tag', value)
@@ -131,32 +123,31 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-/* Tag Filter Bar — centered on PC */
+/* Tag Bar — centered */
 .tag-bar {
   display: flex;
-  gap: var(--space-2);
-  padding-bottom: var(--space-3);
   justify-content: center;
   flex-wrap: wrap;
+  gap: 10px;
+  padding-bottom: 20px;
 }
 
 .tag-btn {
-  flex-shrink: 0;
-  padding: 8px 18px;
+  padding: 8px 20px;
   border-radius: 999px;
-  border: 1px solid var(--divider);
-  background: var(--card-bg);
+  border: 1.5px solid var(--divider);
+  background: white;
   color: var(--text-secondary);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .tag-btn:hover:not(.active) {
-  background: var(--brand-primary-light);
   border-color: var(--brand-primary);
   color: var(--brand-primary);
+  background: var(--brand-primary-light);
   transform: translateY(-1px);
 }
 
@@ -164,12 +155,13 @@ onUnmounted(() => {
   background: var(--brand-primary);
   color: white;
   border-color: var(--brand-primary);
-  animation: tag-bounce 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 2px 8px rgba(124, 92, 252, 0.25);
+  animation: tag-pop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-@keyframes tag-bounce {
+@keyframes tag-pop {
   0% { transform: scale(1); }
-  50% { transform: scale(1.05); }
+  50% { transform: scale(1.08); }
   100% { transform: scale(1); }
 }
 
@@ -178,27 +170,28 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--space-2) 0 var(--space-3);
+  padding: 4px 0 20px;
 }
 
 .sort-options {
   display: flex;
-  gap: var(--space-4);
+  gap: 20px;
 }
 
 .sort-btn {
   background: none;
   border: none;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--text-secondary);
   cursor: pointer;
   padding: 4px 0;
   border-bottom: 2px solid transparent;
-  transition: color 0.2s, border-color 0.2s;
+  transition: all 0.2s ease;
 }
 
 .sort-btn:hover {
   color: var(--brand-primary);
+  transform: none;
 }
 
 .sort-btn.active {
@@ -208,85 +201,86 @@ onUnmounted(() => {
 }
 
 .time-select {
-  background: var(--card-bg);
-  border: 1px solid var(--divider);
+  background: white;
+  border: 1.5px solid var(--divider);
   border-radius: 999px;
-  padding: 4px 12px;
-  font-size: 12px;
+  padding: 6px 16px;
+  font-size: 13px;
   color: var(--text-secondary);
   outline: none;
   cursor: pointer;
+  transition: border-color 0.2s ease;
 }
 
 .time-select:hover {
   border-color: var(--brand-primary);
 }
 
-/* Post List — 3-column masonry on desktop */
-.post-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-}
-
-.loading, .empty {
-  text-align: center;
-  padding: var(--space-8) 0;
-  color: var(--text-secondary);
-}
-
-.empty p {
-  font-size: 15px;
-}
-
+/* Search Hint */
 .search-hint {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--space-2) var(--space-3);
-  margin-bottom: var(--space-3);
+  padding: 10px 16px;
+  margin-bottom: 20px;
   background: var(--brand-primary-light);
   border-radius: 12px;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--brand-primary);
 }
 
 .search-hint button {
   background: none;
   border: none;
-  color: var(--text-secondary);
-  font-size: 12px;
+  color: var(--brand-primary);
+  font-size: 13px;
   cursor: pointer;
+  font-weight: 500;
   text-decoration: underline;
+}
+
+/* Masonry Grid */
+.post-grid {
+  column-count: 2;
+  column-gap: 28px;
+}
+
+.post-grid > :deep(*) {
+  break-inside: avoid;
+  margin-bottom: 24px;
+}
+
+@media (min-width: 768px) {
+  .post-grid {
+    column-count: 3;
+  }
+}
+
+@media (min-width: 1024px) {
+  .post-grid {
+    column-count: 4;
+  }
+}
+
+@media (min-width: 1400px) {
+  .post-grid {
+    column-count: 5;
+  }
+}
+
+/* Status / Loading / Empty */
+.status-area {
+  text-align: center;
+  padding: 48px 0;
+  color: var(--text-secondary);
+}
+
+.empty-text {
+  font-size: 16px;
+  color: var(--text-placeholder);
 }
 
 .load-trigger {
   height: 1px;
-}
-
-/* Tablet: 2-column masonry */
-@media (min-width: 768px) {
-  .post-list {
-    display: block;
-    column-count: 2;
-    column-gap: 20px;
-  }
-
-  .post-list > :deep(*) {
-    break-inside: avoid;
-    margin-bottom: 16px;
-  }
-}
-
-/* Desktop: 3-column masonry */
-@media (min-width: 1024px) {
-  .post-list {
-    column-count: 3;
-    column-gap: 24px;
-  }
-
-  .post-list > :deep(*) {
-    margin-bottom: 20px;
-  }
 }
 </style>

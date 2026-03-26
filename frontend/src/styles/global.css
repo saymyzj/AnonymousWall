@@ -18,10 +18,29 @@ html, body {
 a {
   color: var(--brand-primary);
   text-decoration: none;
+  transition: color 0.2s ease;
 }
 
+a:hover {
+  color: var(--brand-secondary);
+}
+
+/* Custom Scrollbar */
 ::-webkit-scrollbar {
-  display: none;
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(124, 92, 252, 0.25);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(124, 92, 252, 0.4);
 }
 
 /* Bubble gradient colors for posts */
@@ -34,7 +53,7 @@ a {
 .bubble-7 { background: linear-gradient(135deg, #F5F5F5, #EEEEEE); }
 .bubble-8 { background: linear-gradient(135deg, #F0E6D8, #E6D5C3); }
 
-/* Dark mode bubble colors (reduced saturation/brightness) */
+/* Dark mode bubble colors */
 [data-theme="dark"] .bubble-1 { background: linear-gradient(135deg, #4D3440, #4D2E38); }
 [data-theme="dark"] .bubble-2 { background: linear-gradient(135deg, #4D3E2E, #4D3928); }
 [data-theme="dark"] .bubble-3 { background: linear-gradient(135deg, #2E4D42, #284D3A); }
@@ -44,38 +63,16 @@ a {
 [data-theme="dark"] .bubble-7 { background: linear-gradient(135deg, #2A2A2A, #252525); }
 [data-theme="dark"] .bubble-8 { background: linear-gradient(135deg, #3E362E, #383028); }
 
-/* Safe area */
-.safe-bottom {
-  padding-bottom: env(safe-area-inset-bottom, 0);
+/* Global transition baseline */
+button, a, input, select, textarea {
+  transition: all 0.2s ease;
 }
 
-/* ===== Global Hover & Interaction Enhancements ===== */
-
-/* All clickable elements */
-button, [role="button"], .clickable {
+/* Global button interactions */
+button {
   cursor: pointer;
 }
 
-/* Button hover: micro-lift + shadow */
-button:not(:disabled):hover, .btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  transition: all 0.2s ease;
-}
-
-/* Button active: press feedback */
-button:not(:disabled):active, .btn:active {
+button:not(:disabled):active {
   transform: scale(0.96);
-  transition: transform 0.1s ease;
-}
-
-/* Link hover */
-a:hover {
-  color: var(--brand-secondary);
-  transition: color 0.2s ease;
-}
-
-/* Smooth transitions as default */
-button, a, .card, input, select, textarea {
-  transition: all 0.2s ease;
 }
