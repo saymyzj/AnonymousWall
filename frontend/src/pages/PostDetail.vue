@@ -1,61 +1,72 @@
 <template>
   <div class="detail-page" v-if="post">
-    <!-- Post Content -->
-    <div class="post-bubble" :class="`bubble-${post.bg_color}`">
-      <div class="post-header">
-        <div class="avatar-sm" :style="{ background: avatarColor }">
-          {{ avatarText }}
+    <div class="detail-grid">
+      <!-- Left: Post Content -->
+      <div class="post-column">
+        <div class="post-bubble" :class="`bubble-${post.bg_color}`">
+          <div class="post-header">
+            <div class="avatar-sm" :style="{ background: avatarColor }">
+              {{ avatarText }}
+            </div>
+            <span class="nickname">{{ post.identity?.nickname || '匿名用户' }}</span>
+            <span class="time">{{ timeAgo(post.created_at) }}</span>
+          </div>
+          <p class="post-content">{{ post.content }}</p>
+          <div class="post-tag">
+            <span class="tag-capsule">{{ tagEmoji(post.tag) }} {{ post.tag }}</span>
+          </div>
+          <div class="post-actions">
+            <button class="action-btn" :class="{ active: post.is_liked }" @click="toggleLike">
+              {{ post.is_liked ? '♥' : '♡' }} {{ post.like_count }}
+            </button>
+            <span class="action-btn">💬 {{ post.comment_count }}</span>
+            <button v-if="post.is_author" class="action-btn delete" @click="deletePost">🗑 删除</button>
+          </div>
         </div>
-        <span class="nickname">{{ post.identity?.nickname || '匿名用户' }}</span>
-        <span class="time">{{ timeAgo(post.created_at) }}</span>
       </div>
-      <p class="post-content">{{ post.content }}</p>
-      <div class="post-tag">
-        <span class="tag-capsule">{{ tagEmoji(post.tag) }} {{ post.tag }}</span>
-      </div>
-      <div class="post-actions">
-        <button class="action-btn" :class="{ active: post.is_liked }" @click="toggleLike">
-          {{ post.is_liked ? '♥' : '♡' }} {{ post.like_count }}
-        </button>
-        <span class="action-btn">💬 {{ post.comment_count }}</span>
-        <button v-if="post.is_author" class="action-btn delete" @click="deletePost">🗑 删除</button>
-      </div>
-    </div>
 
-    <!-- Comments -->
-    <div class="comments-section">
-      <h3>评论 ({{ post.comment_count }})</h3>
-      <div v-if="commentTree.length > 0" class="comment-list">
-        <CommentTree
-          v-for="c in commentTree"
-          :key="c.id"
-          :comment="c"
-          :depth="0"
-          @reply="startReply"
-          @like="toggleCommentLike"
-          @delete="deleteComment"
-        />
-      </div>
-      <div v-else class="no-comments">还没有评论，来说两句吧</div>
-    </div>
+      <!-- Right: Comments -->
+      <div class="comments-column">
+        <div class="comments-section">
+          <h3>评论 ({{ post.comment_count }})</h3>
+          <div v-if="commentTree.length > 0" class="comment-list">
+            <CommentTree
+              v-for="c in commentTree"
+              :key="c.id"
+              :comment="c"
+              :depth="0"
+              @reply="startReply"
+              @like="toggleCommentLike"
+              @delete="deleteComment"
+            />
+          </div>
+          <div v-else class="no-comments">还没有评论，来说两句吧</div>
 
-    <!-- Comment Input -->
-    <div v-if="authStore.isLoggedIn && !authStore.isVerified" class="verify-hint safe-bottom">
-      账号审核中，通过后即可评论
-    </div>
-    <div class="comment-input-bar safe-bottom" v-if="authStore.isLoggedIn && authStore.isVerified">
-      <div v-if="replyTo" class="reply-hint">
-        回复 {{ replyTo.is_post_author ? '楼主' : replyTo.anon_label }}
-        <button @click="replyTo = null">×</button>
-      </div>
-      <div class="input-row">
-        <input
-          v-model="commentText"
-          placeholder="写评论..."
-          maxlength="200"
-          @keyup.enter="submitComment"
-        />
-        <button class="send-btn" :disabled="!commentText.trim()" @click="submitComment">发送</button>
+          <!-- Inline Comment Input -->
+          <div v-if="authStore.isLoggedIn && !authStore.isVerified" class="verify-hint">
+            账号审核中，通过后即可评论
+          </div>
+          <div class="comment-input-card" v-if="authStore.isLoggedIn && authStore.isVerified">
+            <div v-if="replyTo" class="reply-hint">
+              回复 {{ replyTo.is_post_author ? '楼主' : replyTo.anon_label }}
+              <button @click="replyTo = null">×</button>
+            </div>
+            <div class="input-row">
+              <textarea
+                ref="commentInput"
+                v-model="commentText"
+                placeholder="写评论..."
+                maxlength="200"
+                rows="1"
+                class="comment-textarea"
+                @focus="inputExpanded = true"
+                @blur="onInputBlur"
+                @keydown.enter.exact.prevent="submitComment"
+              ></textarea>
+              <button class="send-btn" :disabled="!commentText.trim()" @click="submitComment">发送</button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -65,7 +76,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { postsApi } from '../api/posts'
 import { commentsApi } from '../api/comments'
@@ -81,6 +92,14 @@ const post = ref<any>(null)
 const flatComments = ref<any[]>([])
 const commentText = ref('')
 const replyTo = ref<any>(null)
+const inputExpanded = ref(false)
+const commentInput = ref<HTMLTextAreaElement>()
+
+function onInputBlur() {
+  if (!commentText.value.trim()) {
+    inputExpanded.value = false
+  }
+}
 
 // Build comment tree from flat list
 const commentTree = computed(() => {
@@ -176,6 +195,8 @@ async function toggleCommentLike(commentId: number) {
 
 function startReply(comment: any) {
   replyTo.value = comment
+  inputExpanded.value = true
+  nextTick(() => commentInput.value?.focus())
 }
 
 async function submitComment() {
@@ -218,15 +239,35 @@ onMounted(() => {
 
 <style scoped>
 .detail-page {
-  max-width: 600px;
+  max-width: 1000px;
   margin: 0 auto;
-  padding-bottom: 80px;
+}
+
+/* Desktop: dual-column grid */
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-5);
+}
+
+@media (min-width: 768px) {
+  .detail-grid {
+    grid-template-columns: 3fr 2fr;
+    gap: var(--space-8);
+    align-items: start;
+  }
+
+  .comments-column {
+    position: sticky;
+    top: 80px;
+    max-height: calc(100vh - 100px);
+    overflow-y: auto;
+  }
 }
 
 .post-bubble {
   border-radius: var(--card-radius);
-  padding: var(--space-4);
-  margin-bottom: var(--space-5);
+  padding: var(--space-5);
 }
 
 .post-header {
@@ -237,24 +278,24 @@ onMounted(() => {
 }
 
 .avatar-sm {
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
 }
 
-.nickname { font-size: 13px; font-weight: 600; }
+.nickname { font-size: 14px; font-weight: 600; }
 .time { font-size: 12px; color: var(--text-secondary); margin-left: auto; }
 
 .post-content {
-  font-size: 15px;
-  line-height: 24px;
-  margin-bottom: var(--space-3);
+  font-size: 16px;
+  line-height: 26px;
+  margin-bottom: var(--space-4);
   word-break: break-word;
   white-space: pre-wrap;
 }
@@ -262,9 +303,9 @@ onMounted(() => {
 .post-tag { margin-bottom: var(--space-3); }
 .tag-capsule {
   display: inline-block;
-  padding: 4px 10px;
+  padding: 4px 12px;
   border-radius: 999px;
-  font-size: 11px;
+  font-size: 12px;
   background: rgba(0, 0, 0, 0.06);
 }
 
@@ -279,19 +320,23 @@ onMounted(() => {
   cursor: pointer;
   font-size: 14px;
   color: var(--text-secondary);
+  transition: color 0.2s ease;
 }
+.action-btn:hover { color: var(--brand-primary); transform: none; box-shadow: none; }
 .action-btn.active { color: var(--brand-secondary); }
 .action-btn.delete { color: var(--color-error); }
 
+/* Comments Section */
 .comments-section {
   background: var(--card-bg);
   border-radius: 20px;
-  padding: var(--space-4);
+  padding: var(--space-5);
 }
 
 .comments-section h3 {
   font-size: 16px;
-  margin-bottom: var(--space-3);
+  margin-bottom: var(--space-4);
+  font-weight: 600;
 }
 
 .no-comments {
@@ -301,16 +346,18 @@ onMounted(() => {
   font-size: 14px;
 }
 
-.comment-input-bar {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: var(--card-bg);
-  backdrop-filter: blur(20px);
-  border-top: 1px solid var(--divider);
-  padding: var(--space-3) var(--space-4);
-  z-index: 100;
+/* Inline Comment Input — inside comments section, not fixed bottom */
+.comment-input-card {
+  margin-top: var(--space-4);
+  padding: var(--space-3);
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: 16px;
+  border: 1px solid var(--divider);
+  transition: border-color 0.2s ease;
+}
+
+.comment-input-card:focus-within {
+  border-color: var(--brand-primary);
 }
 
 .reply-hint {
@@ -333,32 +380,41 @@ onMounted(() => {
 .input-row {
   display: flex;
   gap: var(--space-2);
+  align-items: flex-end;
 }
 
-.input-row input {
+.comment-textarea {
   flex: 1;
-  height: 40px;
-  border: 1px solid var(--divider);
-  border-radius: 20px;
-  padding: 0 var(--space-4);
-  font-size: 14px;
+  border: none;
   background: transparent;
+  font-size: 14px;
   color: var(--text-primary);
   outline: none;
+  resize: none;
+  line-height: 20px;
+  min-height: 20px;
+  max-height: 120px;
+  font-family: inherit;
 }
 
-.input-row input:focus {
-  border-color: var(--brand-primary);
+.comment-textarea::placeholder {
+  color: var(--text-placeholder);
 }
 
 .send-btn {
   background: var(--brand-primary);
   color: white;
   border: none;
-  border-radius: 20px;
-  padding: 0 16px;
-  font-size: 14px;
+  border-radius: 16px;
+  padding: 6px 16px;
+  font-size: 13px;
   cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.send-btn:hover:not(:disabled) {
+  filter: brightness(1.1);
 }
 
 .send-btn:disabled {
@@ -366,18 +422,13 @@ onMounted(() => {
 }
 
 .verify-hint {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  margin-top: var(--space-4);
   text-align: center;
-  padding: var(--space-3) var(--space-4);
-  background: var(--card-bg);
-  backdrop-filter: blur(20px);
-  border-top: 1px solid var(--divider);
+  padding: var(--space-3);
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: 12px;
   font-size: 13px;
   color: var(--text-secondary);
-  z-index: 100;
 }
 
 .loading {

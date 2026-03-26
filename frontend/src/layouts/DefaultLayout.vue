@@ -32,9 +32,22 @@
       </template>
     </nav>
 
+    <!-- Background Decorative Bubbles -->
+    <div class="bg-bubbles" aria-hidden="true">
+      <div class="bg-bubble b1"></div>
+      <div class="bg-bubble b2"></div>
+      <div class="bg-bubble b3"></div>
+      <div class="bg-bubble b4"></div>
+      <div class="bg-bubble b5"></div>
+    </div>
+
     <!-- Content -->
     <main class="main-content">
-      <router-view />
+      <router-view v-slot="{ Component }">
+        <Transition name="page-fade" mode="out-in">
+          <component :is="Component" />
+        </Transition>
+      </router-view>
     </main>
 
     <!-- FAB -->
@@ -123,8 +136,8 @@ onUnmounted(() => window.removeEventListener('scroll', onScroll))
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 56px;
-  padding: 0 var(--space-4);
+  height: 64px;
+  padding: 0 var(--space-8);
   background: var(--card-bg);
   backdrop-filter: blur(20px) saturate(180%);
   border-bottom: 1px solid var(--divider);
@@ -222,8 +235,8 @@ onUnmounted(() => window.removeEventListener('scroll', onScroll))
 }
 
 .main-content {
-  padding: var(--space-4);
-  max-width: 960px;
+  padding: var(--space-6);
+  max-width: 1200px;
   margin: 0 auto;
 }
 
@@ -249,6 +262,11 @@ onUnmounted(() => window.removeEventListener('scroll', onScroll))
   padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
+.fab:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 48px rgba(124, 92, 252, 0.25);
+}
+
 .fab:active {
   transform: scale(0.9);
 }
@@ -259,10 +277,126 @@ onUnmounted(() => window.removeEventListener('scroll', onScroll))
   pointer-events: none;
 }
 
-@media (min-width: 768px) {
-  .navbar {
-    height: 64px;
-    padding: 0 var(--space-6);
+.logo {
+  font-size: 22px;
+}
+
+.logo:hover {
+  opacity: 0.8;
+}
+
+.nav-icon:hover {
+  transform: scale(1.1);
+  transition: transform 0.2s ease;
+}
+
+.login-btn:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+}
+
+.avatar-circle {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.nav-avatar:hover .avatar-circle {
+  transform: scale(1.1);
+  box-shadow: 0 0 0 2px var(--brand-primary);
+}
+
+/* Background Decorative Bubbles */
+.bg-bubbles {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.bg-bubble {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0.15;
+  animation: bubble-float 20s ease-in-out infinite;
+}
+
+.bg-bubble.b1 {
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, #7C5CFC, transparent 70%);
+  top: 10%;
+  left: -5%;
+  animation-duration: 25s;
+}
+
+.bg-bubble.b2 {
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, #FF6B9D, transparent 70%);
+  top: 60%;
+  right: -3%;
+  animation-duration: 20s;
+  animation-delay: -5s;
+}
+
+.bg-bubble.b3 {
+  width: 250px;
+  height: 250px;
+  background: radial-gradient(circle, #34D399, transparent 70%);
+  bottom: 5%;
+  left: 30%;
+  animation-duration: 22s;
+  animation-delay: -10s;
+}
+
+.bg-bubble.b4 {
+  width: 180px;
+  height: 180px;
+  background: radial-gradient(circle, #60A5FA, transparent 70%);
+  top: 30%;
+  right: 20%;
+  animation-duration: 18s;
+  animation-delay: -3s;
+}
+
+.bg-bubble.b5 {
+  width: 150px;
+  height: 150px;
+  background: radial-gradient(circle, #FBBF24, transparent 70%);
+  top: 5%;
+  right: 40%;
+  animation-duration: 24s;
+  animation-delay: -8s;
+}
+
+@keyframes bubble-float {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(20px, -30px) scale(1.05); }
+  50% { transform: translate(-15px, 20px) scale(0.95); }
+  75% { transform: translate(10px, 15px) scale(1.02); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bg-bubble {
+    animation: none;
   }
+}
+
+/* Page Transition */
+.page-fade-enter-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.page-fade-leave-active {
+  transition: opacity 0.15s ease;
+}
+
+.page-fade-enter-from {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.page-fade-leave-to {
+  opacity: 0;
 }
 </style>

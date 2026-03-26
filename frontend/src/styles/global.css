@@ -48,3 +48,34 @@ a {
 .safe-bottom {
   padding-bottom: env(safe-area-inset-bottom, 0);
 }
+
+/* ===== Global Hover & Interaction Enhancements ===== */
+
+/* All clickable elements */
+button, [role="button"], .clickable {
+  cursor: pointer;
+}
+
+/* Button hover: micro-lift + shadow */
+button:not(:disabled):hover, .btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+
+/* Button active: press feedback */
+button:not(:disabled):active, .btn:active {
+  transform: scale(0.96);
+  transition: transform 0.1s ease;
+}
+
+/* Link hover */
+a:hover {
+  color: var(--brand-secondary);
+  transition: color 0.2s ease;
+}
+
+/* Smooth transitions as default */
+button, a, .card, input, select, textarea {
+  transition: all 0.2s ease;
+}

@@ -1,5 +1,10 @@
 <template>
-  <div class="post-card" :class="`bubble-${post.bg_color}`" @click="goDetail">
+  <div
+    class="post-card"
+    :class="[`bubble-${post.bg_color}`, { 'short-bubble': isShortContent }]"
+    :style="{ transform: `rotate(var(--card-rotation, 0deg))` }"
+    @click="goDetail"
+  >
     <!-- Header -->
     <div class="card-header">
       <div class="avatar-sm" :style="{ background: avatarColor }">
@@ -10,8 +15,8 @@
     </div>
 
     <!-- Content: adaptive height based on length -->
-    <p class="card-content" :class="{ clamp: (post.content_preview || post.content || '').length > 100 }">
-      {{ post.content_preview || post.content }}
+    <p class="card-content" :class="{ clamp: contentText.length > 100 }">
+      {{ contentText }}
     </p>
 
     <!-- Tag -->
@@ -43,6 +48,9 @@ const props = defineProps<{ post: any }>()
 const emit = defineEmits(['liked'])
 const router = useRouter()
 const authStore = useAuthStore()
+
+const contentText = computed(() => props.post.content_preview || props.post.content || '')
+const isShortContent = computed(() => contentText.value.length < 50)
 
 const avatarColor = computed(() => {
   const seed = props.post.identity?.avatar_seed || '777777'
@@ -97,9 +105,15 @@ async function toggleLike() {
   border-radius: var(--card-radius);
   padding: var(--space-4);
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
   box-shadow: var(--shadow-sm);
   animation: bubble-in 0.3s ease-out both;
+}
+
+/* Short content → more rounded, smaller feel */
+.post-card.short-bubble {
+  border-radius: 28px;
+  padding: var(--space-3) var(--space-4);
 }
 
 .post-card:nth-child(1) { animation-delay: 0ms; }
@@ -112,16 +126,22 @@ async function toggleLike() {
 @keyframes bubble-in {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(20px) rotate(var(--card-rotation, 0deg));
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) rotate(var(--card-rotation, 0deg));
   }
 }
 
+/* Hover: bubble float up effect */
+.post-card:hover {
+  transform: translateY(-4px) scale(1.01) rotate(0deg) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
 .post-card:active {
-  transform: scale(0.98);
+  transform: scale(0.98) !important;
 }
 
 .card-header {
@@ -201,6 +221,13 @@ async function toggleLike() {
   font-size: 12px;
   color: var(--text-secondary);
   padding: 4px 0;
+  transition: color 0.2s ease;
+}
+
+.action-btn:hover {
+  color: var(--brand-primary);
+  transform: none;
+  box-shadow: none;
 }
 
 .action-btn.active {

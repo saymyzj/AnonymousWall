@@ -41,11 +41,18 @@ function timeAgo(dateStr: string) {
 </script>
 
 <style scoped>
+/* Each comment is a mini bubble */
 .comment-item {
-  padding: var(--space-3) 0;
-  border-bottom: 1px solid var(--divider);
+  padding: var(--space-3);
+  margin-bottom: var(--space-2);
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: 16px;
+  transition: background 0.2s ease;
 }
 
+.comment-item:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
 
 .comment-header {
   display: flex;
@@ -102,6 +109,13 @@ function timeAgo(dateStr: string) {
   color: var(--text-secondary);
   cursor: pointer;
   padding: 2px 0;
+  transition: color 0.2s ease;
+}
+
+.action-btn:hover {
+  color: var(--brand-primary);
+  transform: none;
+  box-shadow: none;
 }
 
 .action-btn.active {

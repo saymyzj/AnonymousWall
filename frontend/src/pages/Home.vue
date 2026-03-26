@@ -43,9 +43,10 @@
     <!-- Post List -->
     <div class="post-list">
       <PostCard
-        v-for="post in postsStore.posts"
+        v-for="(post, index) in postsStore.posts"
         :key="post.id"
         :post="post"
+        :style="cardStyle(index)"
       />
     </div>
 
@@ -56,7 +57,7 @@
 
     <!-- Empty -->
     <div v-if="!postsStore.loading && postsStore.posts.length === 0" class="empty">
-      <p>还没有内容，快来发第一条帖子吧 ✨</p>
+      <p>还没有内容，快来发第一条帖子吧</p>
     </div>
 
     <!-- Load More Trigger -->
@@ -87,6 +88,13 @@ const sortOptions = [
   { label: '最新', value: 'latest' },
   { label: '最热', value: 'hot' },
 ]
+
+// Micro-rotation offsets for bubble feel
+function cardStyle(index: number) {
+  const rotations = [0.3, -0.5, 0.2, -0.3, 0.5, -0.2, 0.4, -0.4]
+  const rot = rotations[index % rotations.length]
+  return { '--card-rotation': `${rot}deg` }
+}
 
 function selectTag(value: string | undefined) {
   postsStore.setFilter('tag', value)
@@ -123,21 +131,18 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-/* Tag Filter Bar */
+/* Tag Filter Bar — centered on PC */
 .tag-bar {
   display: flex;
   gap: var(--space-2);
-  overflow-x: auto;
   padding-bottom: var(--space-3);
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
+  justify-content: center;
+  flex-wrap: wrap;
 }
-
-.tag-bar::-webkit-scrollbar { display: none; }
 
 .tag-btn {
   flex-shrink: 0;
-  padding: 8px 16px;
+  padding: 8px 18px;
   border-radius: 999px;
   border: 1px solid var(--divider);
   background: var(--card-bg);
@@ -145,7 +150,14 @@ onUnmounted(() => {
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
+}
+
+.tag-btn:hover:not(.active) {
+  background: var(--brand-primary-light);
+  border-color: var(--brand-primary);
+  color: var(--brand-primary);
+  transform: translateY(-1px);
 }
 
 .tag-btn.active {
@@ -185,6 +197,10 @@ onUnmounted(() => {
   transition: color 0.2s, border-color 0.2s;
 }
 
+.sort-btn:hover {
+  color: var(--brand-primary);
+}
+
 .sort-btn.active {
   color: var(--brand-primary);
   border-bottom-color: var(--brand-primary);
@@ -199,13 +215,18 @@ onUnmounted(() => {
   font-size: 12px;
   color: var(--text-secondary);
   outline: none;
+  cursor: pointer;
 }
 
-/* Post List — Masonry / Bubble Layout */
+.time-select:hover {
+  border-color: var(--brand-primary);
+}
+
+/* Post List — 3-column masonry on desktop */
 .post-list {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-4);
 }
 
 .loading, .empty {
@@ -243,17 +264,29 @@ onUnmounted(() => {
   height: 1px;
 }
 
-/* Desktop: CSS column masonry for unequal-height bubbles */
+/* Tablet: 2-column masonry */
 @media (min-width: 768px) {
   .post-list {
     display: block;
     column-count: 2;
-    column-gap: 16px;
+    column-gap: 20px;
   }
 
   .post-list > :deep(*) {
     break-inside: avoid;
-    margin-bottom: 12px;
+    margin-bottom: 16px;
+  }
+}
+
+/* Desktop: 3-column masonry */
+@media (min-width: 1024px) {
+  .post-list {
+    column-count: 3;
+    column-gap: 24px;
+  }
+
+  .post-list > :deep(*) {
+    margin-bottom: 20px;
   }
 }
 </style>

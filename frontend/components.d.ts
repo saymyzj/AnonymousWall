@@ -12,6 +12,7 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     CommentItem: typeof import('./src/components/CommentItem.vue')['default']
+    CommentTree: typeof import('./src/components/CommentTree.vue')['default']
     HelloWorld: typeof import('./src/components/HelloWorld.vue')['default']
     PostCard: typeof import('./src/components/PostCard.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']

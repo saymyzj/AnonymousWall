@@ -1,45 +1,75 @@
 <template>
   <div class="profile-page">
-    <div class="profile-header">
-      <div class="avatar-lg" :style="{ background: avatarColor }">
-        {{ avatarText }}
-      </div>
-      <h2>{{ authStore.identity?.nickname || '匿名用户' }}</h2>
-      <p class="verify-status" :class="{ verified: authStore.isVerified }">
-        {{ authStore.isVerified ? '✅ 已验证' : '⏳ 审核中' }}
-      </p>
-      <p class="join-date">注册于 {{ formatDate(authStore.userInfo?.date_joined) }}</p>
-    </div>
+    <div class="profile-grid">
+      <!-- Left Sidebar: User Info -->
+      <aside class="sidebar">
+        <div class="profile-card">
+          <div class="avatar-lg" :style="{ background: avatarColor }">
+            {{ avatarText }}
+          </div>
+          <h2>{{ authStore.identity?.nickname || '匿名用户' }}</h2>
+          <p class="verify-status" :class="{ verified: authStore.isVerified }">
+            {{ authStore.isVerified ? '已验证' : '审核中' }}
+          </p>
+          <p class="join-date">注册于 {{ formatDate(authStore.userInfo?.date_joined) }}</p>
+        </div>
 
-    <div class="menu-card">
-      <div class="menu-item" @click="showMyPosts = true">
-        <span>📝 我的发布</span>
-        <span class="arrow">›</span>
-      </div>
-      <div class="menu-item" @click="handleLogout">
-        <span>🚪 退出登录</span>
-        <span class="arrow">›</span>
-      </div>
-    </div>
-
-    <!-- My Posts Popup -->
-    <van-popup v-model:show="showMyPosts" position="bottom" :style="{ height: '70%' }" round>
-      <div class="popup-content">
-        <h3>我的发布</h3>
-        <div v-if="myPosts.length > 0" class="my-posts-list">
-          <div
-            v-for="p in myPosts"
-            :key="p.id"
-            class="my-post-item"
-            @click="goPost(p.id)"
-          >
-            <p>{{ p.content_preview || p.content }}</p>
-            <span class="tag-capsule">{{ p.tag }}</span>
+        <!-- Stats Cards -->
+        <div class="stats-row">
+          <div class="stat-card">
+            <span class="stat-number">{{ myPosts.length }}</span>
+            <span class="stat-label">发布</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-number">{{ totalComments }}</span>
+            <span class="stat-label">评论</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-number">{{ totalLikes }}</span>
+            <span class="stat-label">获赞</span>
           </div>
         </div>
-        <div v-else class="empty">还没有发布过内容</div>
+
+        <!-- Menu -->
+        <div class="menu-card">
+          <div class="menu-item" :class="{ active: activeTab === 'posts' }" @click="activeTab = 'posts'">
+            <span>📝 我的发布</span>
+          </div>
+          <div class="menu-item" :class="{ active: activeTab === 'comments' }" @click="activeTab = 'comments'">
+            <span>💬 我的评论</span>
+          </div>
+          <div class="menu-item logout" @click="handleLogout">
+            <span>🚪 退出登录</span>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Right: Content Area -->
+      <div class="content-area">
+        <h3 class="content-title">{{ activeTab === 'posts' ? '我的发布' : '我的评论' }}</h3>
+
+        <!-- My Posts -->
+        <template v-if="activeTab === 'posts'">
+          <div v-if="myPosts.length > 0" class="my-posts-grid">
+            <PostCard
+              v-for="p in myPosts"
+              :key="p.id"
+              :post="p"
+            />
+          </div>
+          <div v-else class="empty">
+            <p>还没有发布过内容</p>
+          </div>
+        </template>
+
+        <!-- My Comments (placeholder) -->
+        <template v-if="activeTab === 'comments'">
+          <div class="empty">
+            <p>即将上线</p>
+          </div>
+        </template>
       </div>
-    </van-popup>
+    </div>
   </div>
 </template>
 
@@ -48,11 +78,12 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { postsApi } from '../api/posts'
+import PostCard from '../components/PostCard.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
-const showMyPosts = ref(false)
 const myPosts = ref<any[]>([])
+const activeTab = ref<'posts' | 'comments'>('posts')
 
 const avatarColor = computed(() => {
   const seed = authStore.identity?.avatar_seed || '777777'
@@ -62,6 +93,14 @@ const avatarColor = computed(() => {
 const avatarText = computed(() => {
   const nick = authStore.identity?.nickname || '?'
   return nick.charAt(2) || nick.charAt(0)
+})
+
+const totalLikes = computed(() => {
+  return myPosts.value.reduce((sum: number, p: any) => sum + (p.like_count || 0), 0)
+})
+
+const totalComments = computed(() => {
+  return myPosts.value.reduce((sum: number, p: any) => sum + (p.comment_count || 0), 0)
 })
 
 function formatDate(dateStr?: string) {
@@ -74,19 +113,12 @@ function handleLogout() {
   router.push('/login')
 }
 
-function goPost(id: number) {
-  showMyPosts.value = false
-  router.push(`/post/${id}`)
-}
-
 onMounted(async () => {
   if (!authStore.userInfo) {
     await authStore.fetchMe()
   }
-  // Load user's posts
   try {
     const res = await postsApi.getList({})
-    // Filter client-side for now (MVP simple approach)
     myPosts.value = (res.data.results || []).filter(
       (p: any) => p.is_author
     )
@@ -96,32 +128,53 @@ onMounted(async () => {
 
 <style scoped>
 .profile-page {
-  max-width: 600px;
+  max-width: 1000px;
   margin: 0 auto;
 }
 
-.profile-header {
+.profile-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-5);
+}
+
+@media (min-width: 768px) {
+  .profile-grid {
+    grid-template-columns: 280px 1fr;
+    gap: var(--space-8);
+    align-items: start;
+  }
+
+  .sidebar {
+    position: sticky;
+    top: 80px;
+  }
+}
+
+/* Profile Card */
+.profile-card {
   text-align: center;
-  padding: var(--space-8) 0;
-  background: var(--brand-primary-light);
+  padding: var(--space-6);
+  background: var(--card-bg);
   border-radius: var(--card-radius);
-  margin-bottom: var(--space-5);
+  margin-bottom: var(--space-4);
 }
 
 .avatar-lg {
-  width: 72px;
-  height: 72px;
+  width: 80px;
+  height: 80px;
   border-radius: 50%;
   margin: 0 auto var(--space-3);
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 700;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
 }
 
-.profile-header h2 {
+.profile-card h2 {
   font-size: 20px;
   margin-bottom: var(--space-1);
 }
@@ -141,6 +194,37 @@ onMounted(async () => {
   color: var(--text-secondary);
 }
 
+/* Stats Row */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.stat-card {
+  text-align: center;
+  padding: var(--space-3);
+  background: var(--card-bg);
+  border-radius: 16px;
+}
+
+.stat-number {
+  display: block;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--brand-primary);
+  line-height: 1.2;
+}
+
+.stat-label {
+  display: block;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+/* Menu */
 .menu-card {
   background: var(--card-bg);
   border-radius: 20px;
@@ -150,58 +234,69 @@ onMounted(async () => {
 .menu-item {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: var(--space-4);
+  padding: var(--space-3) var(--space-4);
   cursor: pointer;
-  border-bottom: 1px solid var(--divider);
-  font-size: 15px;
+  font-size: 14px;
+  color: var(--text-primary);
+  border-left: 3px solid transparent;
+  transition: all 0.2s ease;
 }
 
-.menu-item:last-child {
-  border-bottom: none;
+.menu-item:hover {
+  background: var(--brand-primary-light);
 }
 
-.arrow {
-  color: var(--text-secondary);
-  font-size: 20px;
+.menu-item.active {
+  border-left-color: var(--brand-primary);
+  color: var(--brand-primary);
+  font-weight: 600;
+  background: var(--brand-primary-light);
 }
 
-.popup-content {
-  padding: var(--space-5);
+.menu-item.logout {
+  color: var(--color-error);
+  border-top: 1px solid var(--divider);
 }
 
-.popup-content h3 {
+.menu-item.logout:hover {
+  background: rgba(248, 113, 113, 0.08);
+}
+
+/* Content Area */
+.content-title {
   font-size: 18px;
+  font-weight: 600;
   margin-bottom: var(--space-4);
 }
 
-.my-post-item {
-  padding: var(--space-3);
-  border-bottom: 1px solid var(--divider);
-  cursor: pointer;
+.my-posts-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
 }
 
-.my-post-item p {
-  font-size: 14px;
-  line-height: 22px;
-  margin-bottom: var(--space-2);
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
+@media (min-width: 768px) {
+  .my-posts-grid {
+    display: block;
+    column-count: 2;
+    column-gap: 16px;
+  }
 
-.tag-capsule {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 999px;
-  font-size: 11px;
-  background: rgba(0, 0, 0, 0.06);
+  .my-posts-grid > :deep(*) {
+    break-inside: avoid;
+    margin-bottom: 12px;
+  }
 }
 
 .empty {
   text-align: center;
   color: var(--text-secondary);
-  padding: var(--space-8) 0;
+  padding: var(--space-10) 0;
+  background: var(--card-bg);
+  border-radius: var(--card-radius);
+}
+
+.empty p {
+  font-size: 15px;
 }
 </style>
