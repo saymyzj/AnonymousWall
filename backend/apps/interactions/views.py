@@ -1,5 +1,6 @@
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
+from common.permissions import IsVerifiedUser
 from django.db.models import F
 from common.exceptions import APIResponse
 from .models import Like
@@ -8,7 +9,7 @@ from apps.comments.models import Comment
 
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsVerifiedUser])
 def toggle_post_like(request, pk):
     try:
         post = Post.objects.get(pk=pk, is_deleted=False)
@@ -28,7 +29,7 @@ def toggle_post_like(request, pk):
 
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsVerifiedUser])
 def toggle_comment_like(request, pk):
     try:
         comment = Comment.objects.get(pk=pk)

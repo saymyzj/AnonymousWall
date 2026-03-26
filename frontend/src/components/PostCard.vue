@@ -9,8 +9,10 @@
       <span class="time">{{ timeAgo(post.created_at) }}</span>
     </div>
 
-    <!-- Content -->
-    <p class="card-content">{{ post.content_preview || post.content }}</p>
+    <!-- Content: adaptive height based on length -->
+    <p class="card-content" :class="{ clamp: post.content.length > 100 }">
+      {{ post.content_preview || post.content }}
+    </p>
 
     <!-- Tag -->
     <div class="card-tag">
@@ -20,7 +22,7 @@
     <!-- Actions -->
     <div class="card-actions" @click.stop>
       <button class="action-btn" :class="{ active: post.is_liked }" @click="toggleLike">
-        <span>{{ post.is_liked ? '♥' : '♡' }}</span>
+        <span class="like-icon">{{ post.is_liked ? '♥' : '♡' }}</span>
         <span>{{ post.like_count }}</span>
       </button>
       <button class="action-btn" @click="goDetail">
@@ -97,6 +99,25 @@ async function toggleLike() {
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
   box-shadow: var(--shadow-sm);
+  animation: bubble-in 0.3s ease-out both;
+}
+
+.post-card:nth-child(1) { animation-delay: 0ms; }
+.post-card:nth-child(2) { animation-delay: 50ms; }
+.post-card:nth-child(3) { animation-delay: 100ms; }
+.post-card:nth-child(4) { animation-delay: 150ms; }
+.post-card:nth-child(5) { animation-delay: 200ms; }
+.post-card:nth-child(6) { animation-delay: 250ms; }
+
+@keyframes bubble-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .post-card:active {
@@ -135,16 +156,21 @@ async function toggleLike() {
   margin-left: auto;
 }
 
+/* Content: natural height for short text, clamped for long text */
 .card-content {
   font-size: 15px;
   line-height: 24px;
   color: var(--text-primary);
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
   margin-bottom: var(--space-3);
   word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.card-content.clamp {
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .card-tag {
@@ -179,6 +205,17 @@ async function toggleLike() {
 
 .action-btn.active {
   color: var(--brand-secondary);
+}
+
+.action-btn.active .like-icon {
+  animation: like-bounce 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes like-bounce {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.4); }
+  60% { transform: scale(0.9); }
+  100% { transform: scale(1); }
 }
 
 .action-btn span:first-child {

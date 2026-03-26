@@ -5,6 +5,9 @@
         {{ avatarText }}
       </div>
       <h2>{{ authStore.identity?.nickname || '匿名用户' }}</h2>
+      <p class="verify-status" :class="{ verified: authStore.isVerified }">
+        {{ authStore.isVerified ? '✅ 已验证' : '⏳ 审核中' }}
+      </p>
       <p class="join-date">注册于 {{ formatDate(authStore.userInfo?.date_joined) }}</p>
     </div>
 
@@ -121,6 +124,16 @@ onMounted(async () => {
 .profile-header h2 {
   font-size: 20px;
   margin-bottom: var(--space-1);
+}
+
+.verify-status {
+  font-size: 13px;
+  color: var(--color-warning);
+  margin-bottom: var(--space-1);
+}
+
+.verify-status.verified {
+  color: var(--color-success);
 }
 
 .join-date {

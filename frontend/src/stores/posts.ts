@@ -11,6 +11,7 @@ export const usePostsStore = defineStore('posts', () => {
     tag: undefined,
     time: undefined,
     sort: 'latest',
+    search: undefined,
   })
 
   async function fetchPosts(reset = false) {

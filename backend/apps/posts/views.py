@@ -1,6 +1,7 @@
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from common.permissions import IsVerifiedUser
 from django.utils import timezone
 from datetime import timedelta
 from common.exceptions import APIResponse
@@ -16,6 +17,11 @@ def post_list(request):
         is_deleted=False,
         status__in=['normal', 'ai_suspect'],
     ).select_related('identity')
+
+    # Keyword search
+    search = request.query_params.get('search', '').strip()
+    if search:
+        queryset = queryset.filter(content__icontains=search)
 
     # Tag filter
     tag = request.query_params.get('tag')
@@ -47,7 +53,7 @@ def post_list(request):
 
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsVerifiedUser])
 def create_post(request):
     serializer = CreatePostSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
@@ -85,7 +91,7 @@ def post_detail(request, pk):
 
 
 @api_view(['DELETE'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsVerifiedUser])
 def delete_post(request, pk):
     try:
         post = Post.objects.get(pk=pk, author=request.user, is_deleted=False)

@@ -12,6 +12,8 @@ interface Identity {
 interface UserInfo {
   id: number
   email: string
+  student_id: string
+  is_verified: boolean
   date_joined: string
   default_identity: Identity | null
 }
@@ -22,6 +24,7 @@ export const useAuthStore = defineStore('auth', () => {
   const userInfo = ref<UserInfo | null>(null)
 
   const isLoggedIn = computed(() => !!accessToken.value)
+  const isVerified = computed(() => !!userInfo.value?.is_verified)
   const identity = computed(() => userInfo.value?.default_identity)
 
   function setTokens(access: string, refresh: string) {
@@ -39,8 +42,8 @@ export const useAuthStore = defineStore('auth', () => {
     return data
   }
 
-  async function register(email: string, password: string) {
-    const res = await authApi.register(email, password)
+  async function register(email: string, password: string, student_id: string, real_name: string) {
+    const res = await authApi.register({ email, password, student_id, real_name })
     const data = res.data.data
     setTokens(data.access, data.refresh)
     userInfo.value = data.user
@@ -66,7 +69,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   return {
-    accessToken, refreshToken, userInfo, isLoggedIn, identity,
+    accessToken, refreshToken, userInfo, isLoggedIn, isVerified, identity,
     setTokens, login, register, fetchMe, logout,
   }
 })

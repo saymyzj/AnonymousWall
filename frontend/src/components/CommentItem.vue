@@ -1,5 +1,5 @@
 <template>
-  <div class="comment-item" :class="{ 'is-reply': !!comment.parent }">
+  <div class="comment-item">
     <div class="comment-header">
       <div class="anon-avatar" :style="{ background: comment.anon_color }">
         {{ comment.anon_label?.charAt(2) || 'A' }}
@@ -46,14 +46,6 @@ function timeAgo(dateStr: string) {
   border-bottom: 1px solid var(--divider);
 }
 
-.comment-item.is-reply {
-  margin-left: 40px;
-  background: rgba(0, 0, 0, 0.02);
-  padding: var(--space-3);
-  border-radius: 12px;
-  border-bottom: none;
-  margin-bottom: var(--space-2);
-}
 
 .comment-header {
   display: flex;

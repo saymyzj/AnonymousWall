@@ -1,6 +1,7 @@
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from common.permissions import IsVerifiedUser
 from django.db.models import F
 from common.exceptions import APIResponse
 from common.pagination import StandardPagination
@@ -38,6 +39,7 @@ def comment_list(request, post_id):
     user_map = _build_user_map(post_id)
 
     paginator = StandardPagination()
+    paginator.page_size = 200  # Large page to keep comment tree intact
     page = paginator.paginate_queryset(queryset, request)
     serializer = CommentSerializer(
         page, many=True,
@@ -51,7 +53,7 @@ def comment_list(request, post_id):
 
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsVerifiedUser])
 def create_comment(request, post_id):
     try:
         post = Post.objects.get(pk=post_id, is_deleted=False)
@@ -105,7 +107,7 @@ def create_comment(request, post_id):
 
 
 @api_view(['DELETE'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsVerifiedUser])
 def delete_comment(request, pk):
     try:
         comment = Comment.objects.get(pk=pk, author=request.user)

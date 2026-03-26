@@ -7,12 +7,13 @@ from .models import User, AnonymousIdentity
 
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
-    list_display = ['email', 'date_joined', 'is_banned', 'ban_until', 'post_count', 'is_active', 'is_staff']
-    list_filter = ['is_banned', 'is_active', 'is_staff', 'date_joined']
-    search_fields = ['email']
+    list_display = ['email', 'student_id', 'real_name', 'is_verified', 'date_joined', 'is_banned', 'ban_until', 'post_count', 'is_active', 'is_staff']
+    list_filter = ['is_verified', 'is_banned', 'is_active', 'is_staff', 'date_joined']
+    search_fields = ['email', 'student_id', 'real_name']
     ordering = ['-date_joined']
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
+        ('实名信息', {'fields': ('student_id', 'real_name', 'is_verified')}),
         ('权限', {'fields': ('is_active', 'is_staff', 'is_superuser')}),
         ('禁言', {'fields': ('is_banned', 'ban_until')}),
     )
@@ -22,7 +23,11 @@ class UserAdmin(BaseUserAdmin):
             'fields': ('email', 'password1', 'password2'),
         }),
     )
-    actions = ['ban_7_days', 'ban_30_days', 'ban_forever', 'unban']
+    actions = ['verify_users', 'ban_7_days', 'ban_30_days', 'ban_forever', 'unban']
+
+    @admin.action(description='通过验证')
+    def verify_users(self, request, queryset):
+        queryset.update(is_verified=True)
 
     def post_count(self, obj):
         return obj.posts.count()

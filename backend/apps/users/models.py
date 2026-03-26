@@ -21,6 +21,9 @@ class UserManager(BaseUserManager):
 class User(AbstractUser):
     username = None
     email = models.EmailField('邮箱', unique=True)
+    student_id = models.CharField('学号/工号', max_length=30, blank=True, default='')
+    real_name = models.CharField('真实姓名', max_length=50, blank=True, default='')
+    is_verified = models.BooleanField('是否已验证', default=False)
     is_banned = models.BooleanField('是否禁言', default=False)
     ban_until = models.DateTimeField('禁言截止时间', null=True, blank=True)
 

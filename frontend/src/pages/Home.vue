@@ -34,6 +34,12 @@
       </select>
     </div>
 
+    <!-- Search Hint -->
+    <div v-if="filters.search" class="search-hint">
+      搜索"{{ filters.search }}"的结果
+      <button @click="clearSearch">清除</button>
+    </div>
+
     <!-- Post List -->
     <div class="post-list">
       <PostCard
@@ -91,6 +97,10 @@ function onTimeChange(e: Event) {
   postsStore.setFilter('time', val === 'all' ? undefined : val)
 }
 
+function clearSearch() {
+  postsStore.setFilter('search', undefined)
+}
+
 let observer: IntersectionObserver | null = null
 
 onMounted(() => {
@@ -113,13 +123,17 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+/* Tag Filter Bar */
 .tag-bar {
   display: flex;
   gap: var(--space-2);
   overflow-x: auto;
   padding-bottom: var(--space-3);
   -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
 }
+
+.tag-bar::-webkit-scrollbar { display: none; }
 
 .tag-btn {
   flex-shrink: 0;
@@ -138,8 +152,16 @@ onUnmounted(() => {
   background: var(--brand-primary);
   color: white;
   border-color: var(--brand-primary);
+  animation: tag-bounce 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
+@keyframes tag-bounce {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+/* Sort Bar */
 .sort-bar {
   display: flex;
   align-items: center;
@@ -160,6 +182,7 @@ onUnmounted(() => {
   cursor: pointer;
   padding: 4px 0;
   border-bottom: 2px solid transparent;
+  transition: color 0.2s, border-color 0.2s;
 }
 
 .sort-btn.active {
@@ -178,6 +201,7 @@ onUnmounted(() => {
   outline: none;
 }
 
+/* Post List — Masonry / Bubble Layout */
 .post-list {
   display: flex;
   flex-direction: column;
@@ -194,15 +218,42 @@ onUnmounted(() => {
   font-size: 15px;
 }
 
+.search-hint {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-2) var(--space-3);
+  margin-bottom: var(--space-3);
+  background: var(--brand-primary-light);
+  border-radius: 12px;
+  font-size: 13px;
+  color: var(--brand-primary);
+}
+
+.search-hint button {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
 .load-trigger {
   height: 1px;
 }
 
+/* Desktop: CSS column masonry for unequal-height bubbles */
 @media (min-width: 768px) {
   .post-list {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: var(--space-4);
+    display: block;
+    column-count: 2;
+    column-gap: 16px;
+  }
+
+  .post-list > :deep(*) {
+    break-inside: avoid;
+    margin-bottom: 12px;
   }
 }
 </style>

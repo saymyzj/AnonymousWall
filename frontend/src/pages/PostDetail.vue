@@ -25,12 +25,13 @@
     <!-- Comments -->
     <div class="comments-section">
       <h3>评论 ({{ post.comment_count }})</h3>
-      <div v-if="comments.length > 0" class="comment-list">
-        <CommentItem
-          v-for="c in comments"
+      <div v-if="commentTree.length > 0" class="comment-list">
+        <CommentTree
+          v-for="c in commentTree"
           :key="c.id"
           :comment="c"
-          @reply="startReply(c)"
+          :depth="0"
+          @reply="startReply"
           @like="toggleCommentLike"
           @delete="deleteComment"
         />
@@ -39,7 +40,10 @@
     </div>
 
     <!-- Comment Input -->
-    <div class="comment-input-bar safe-bottom" v-if="authStore.isLoggedIn">
+    <div v-if="authStore.isLoggedIn && !authStore.isVerified" class="verify-hint safe-bottom">
+      账号审核中，通过后即可评论
+    </div>
+    <div class="comment-input-bar safe-bottom" v-if="authStore.isLoggedIn && authStore.isVerified">
       <div v-if="replyTo" class="reply-hint">
         回复 {{ replyTo.is_post_author ? '楼主' : replyTo.anon_label }}
         <button @click="replyTo = null">×</button>
@@ -61,12 +65,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { postsApi } from '../api/posts'
 import { commentsApi } from '../api/comments'
 import { useAuthStore } from '../stores/auth'
-import CommentItem from '../components/CommentItem.vue'
+import CommentTree from '../components/CommentTree.vue'
 import { showToast } from 'vant'
 
 const route = useRoute()
@@ -74,9 +78,38 @@ const router = useRouter()
 const authStore = useAuthStore()
 
 const post = ref<any>(null)
-const comments = ref<any[]>([])
+const flatComments = ref<any[]>([])
 const commentText = ref('')
 const replyTo = ref<any>(null)
+
+// Build comment tree from flat list
+const commentTree = computed(() => {
+  const list = flatComments.value
+  if (!list.length) return []
+
+  const map = new Map<number, any>()
+  const roots: any[] = []
+
+  for (const c of list) {
+    map.set(c.id, { ...c, children: [] })
+  }
+
+  for (const c of list) {
+    const node = map.get(c.id)!
+    if (c.parent) {
+      const parentNode = map.get(c.parent)
+      if (parentNode) {
+        parentNode.children.push(node)
+      } else {
+        roots.push(node)
+      }
+    } else {
+      roots.push(node)
+    }
+  }
+
+  return roots
+})
 
 const postId = Number(route.params.id)
 
@@ -116,7 +149,7 @@ async function loadPost() {
 async function loadComments() {
   try {
     const res = await commentsApi.getList(postId)
-    comments.value = res.data.results || []
+    flatComments.value = res.data.results || []
   } catch { /* ignore */ }
 }
 
@@ -133,7 +166,7 @@ async function toggleCommentLike(commentId: number) {
   if (!authStore.isLoggedIn) { router.push('/login'); return }
   try {
     const res = await commentsApi.toggleLike(commentId)
-    const c = comments.value.find((x: any) => x.id === commentId)
+    const c = flatComments.value.find((x: any) => x.id === commentId)
     if (c) {
       c.is_liked = res.data.data.is_liked
       c.like_count = res.data.data.like_count
@@ -330,6 +363,21 @@ onMounted(() => {
 
 .send-btn:disabled {
   opacity: 0.5;
+}
+
+.verify-hint {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  text-align: center;
+  padding: var(--space-3) var(--space-4);
+  background: var(--card-bg);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid var(--divider);
+  font-size: 13px;
+  color: var(--text-secondary);
+  z-index: 100;
 }
 
 .loading {

@@ -33,6 +33,24 @@
             minlength="8"
           />
         </div>
+        <template v-if="mode === 'register'">
+          <div class="input-group">
+            <input
+              v-model="studentId"
+              type="text"
+              placeholder="请输入学号/工号"
+              required
+            />
+          </div>
+          <div class="input-group">
+            <input
+              v-model="realName"
+              type="text"
+              placeholder="请输入真实姓名"
+              required
+            />
+          </div>
+        </template>
 
         <button type="submit" class="submit-btn" :disabled="loading">
           {{ loading ? '请稍候...' : (mode === 'login' ? '登录' : '注册') }}
@@ -56,6 +74,8 @@ const authStore = useAuthStore()
 const mode = ref<'login' | 'register'>('login')
 const email = ref('')
 const password = ref('')
+const studentId = ref('')
+const realName = ref('')
 const loading = ref(false)
 const errorMsg = ref('')
 
@@ -66,7 +86,7 @@ async function handleSubmit() {
     if (mode.value === 'login') {
       await authStore.login(email.value, password.value)
     } else {
-      await authStore.register(email.value, password.value)
+      await authStore.register(email.value, password.value, studentId.value, realName.value)
     }
     const redirect = (route.query.redirect as string) || '/'
     router.push(redirect)

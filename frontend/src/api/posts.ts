@@ -4,6 +4,7 @@ export interface PostParams {
   tag?: string
   time?: string
   sort?: string
+  search?: string
   page?: number
 }
 

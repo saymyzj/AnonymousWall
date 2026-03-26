@@ -34,6 +34,16 @@ a {
 .bubble-7 { background: linear-gradient(135deg, #F5F5F5, #EEEEEE); }
 .bubble-8 { background: linear-gradient(135deg, #F0E6D8, #E6D5C3); }
 
+/* Dark mode bubble colors (reduced saturation/brightness) */
+[data-theme="dark"] .bubble-1 { background: linear-gradient(135deg, #4D3440, #4D2E38); }
+[data-theme="dark"] .bubble-2 { background: linear-gradient(135deg, #4D3E2E, #4D3928); }
+[data-theme="dark"] .bubble-3 { background: linear-gradient(135deg, #2E4D42, #284D3A); }
+[data-theme="dark"] .bubble-4 { background: linear-gradient(135deg, #2E3E4D, #284A4D); }
+[data-theme="dark"] .bubble-5 { background: linear-gradient(135deg, #3E2E4D, #342A4D); }
+[data-theme="dark"] .bubble-6 { background: linear-gradient(135deg, #4D4A2E, #4D4528); }
+[data-theme="dark"] .bubble-7 { background: linear-gradient(135deg, #2A2A2A, #252525); }
+[data-theme="dark"] .bubble-8 { background: linear-gradient(135deg, #3E362E, #383028); }
+
 /* Safe area */
 .safe-bottom {
   padding-bottom: env(safe-area-inset-bottom, 0);
