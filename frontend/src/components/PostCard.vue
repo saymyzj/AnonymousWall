@@ -1,0 +1,187 @@
+<template>
+  <div class="post-card" :class="`bubble-${post.bg_color}`" @click="goDetail">
+    <!-- Header -->
+    <div class="card-header">
+      <div class="avatar-sm" :style="{ background: avatarColor }">
+        {{ avatarText }}
+      </div>
+      <span class="nickname">{{ post.identity?.nickname || '匿名用户' }}</span>
+      <span class="time">{{ timeAgo(post.created_at) }}</span>
+    </div>
+
+    <!-- Content -->
+    <p class="card-content">{{ post.content_preview || post.content }}</p>
+
+    <!-- Tag -->
+    <div class="card-tag">
+      <span class="tag-capsule">{{ tagEmoji(post.tag) }} {{ post.tag }}</span>
+    </div>
+
+    <!-- Actions -->
+    <div class="card-actions" @click.stop>
+      <button class="action-btn" :class="{ active: post.is_liked }" @click="toggleLike">
+        <span>{{ post.is_liked ? '♥' : '♡' }}</span>
+        <span>{{ post.like_count }}</span>
+      </button>
+      <button class="action-btn" @click="goDetail">
+        <span>💬</span>
+        <span>{{ post.comment_count }}</span>
+      </button>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { postsApi } from '../api/posts'
+import { useAuthStore } from '../stores/auth'
+
+const props = defineProps<{ post: any }>()
+const emit = defineEmits(['liked'])
+const router = useRouter()
+const authStore = useAuthStore()
+
+const avatarColor = computed(() => {
+  const seed = props.post.identity?.avatar_seed || '777777'
+  return `#${seed.substring(0, 6)}`
+})
+
+const avatarText = computed(() => {
+  const nick = props.post.identity?.nickname || '?'
+  return nick.charAt(2) || nick.charAt(0)
+})
+
+function tagEmoji(tag: string) {
+  const map: Record<string, string> = {
+    '表白': '💌', '吐槽': '😤', '求助': '🆘',
+    '树洞': '🕳️', '失物招领': '🔍', '搭子': '🤝',
+  }
+  return map[tag] || ''
+}
+
+function timeAgo(dateStr: string) {
+  const now = Date.now()
+  const d = new Date(dateStr).getTime()
+  const diff = Math.floor((now - d) / 1000)
+  if (diff < 60) return '刚刚'
+  if (diff < 3600) return `${Math.floor(diff / 60)}分钟前`
+  if (diff < 86400) return `${Math.floor(diff / 3600)}小时前`
+  if (diff < 2592000) return `${Math.floor(diff / 86400)}天前`
+  return new Date(dateStr).toLocaleDateString()
+}
+
+function goDetail() {
+  router.push(`/post/${props.post.id}`)
+}
+
+async function toggleLike() {
+  if (!authStore.isLoggedIn) {
+    router.push('/login')
+    return
+  }
+  try {
+    const res = await postsApi.toggleLike(props.post.id)
+    const data = res.data.data
+    props.post.is_liked = data.is_liked
+    props.post.like_count = data.like_count
+    emit('liked')
+  } catch { /* ignore */ }
+}
+</script>
+
+<style scoped>
+.post-card {
+  border-radius: var(--card-radius);
+  padding: var(--space-4);
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: var(--shadow-sm);
+}
+
+.post-card:active {
+  transform: scale(0.98);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.avatar-sm {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.nickname {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.time {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-left: auto;
+}
+
+.card-content {
+  font-size: 15px;
+  line-height: 24px;
+  color: var(--text-primary);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-bottom: var(--space-3);
+  word-break: break-word;
+}
+
+.card-tag {
+  margin-bottom: var(--space-3);
+}
+
+.tag-capsule {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  background: rgba(0, 0, 0, 0.06);
+  color: var(--text-secondary);
+}
+
+.card-actions {
+  display: flex;
+  gap: var(--space-6);
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--text-secondary);
+  padding: 4px 0;
+}
+
+.action-btn.active {
+  color: var(--brand-secondary);
+}
+
+.action-btn span:first-child {
+  font-size: 18px;
+}
+</style>

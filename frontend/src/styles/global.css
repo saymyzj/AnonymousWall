@@ -1,0 +1,40 @@
+@import './variables.css';
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  font-family: var(--font-sans);
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  color: var(--brand-primary);
+  text-decoration: none;
+}
+
+::-webkit-scrollbar {
+  display: none;
+}
+
+/* Bubble gradient colors for posts */
+.bubble-1 { background: linear-gradient(135deg, #FFE0EC, #FFC2D4); }
+.bubble-2 { background: linear-gradient(135deg, #FFE0C2, #FFDAA6); }
+.bubble-3 { background: linear-gradient(135deg, #D0F4EA, #B8ECD8); }
+.bubble-4 { background: linear-gradient(135deg, #D6ECFF, #BDE0FE); }
+.bubble-5 { background: linear-gradient(135deg, #E8DEFF, #D4C2FC); }
+.bubble-6 { background: linear-gradient(135deg, #FFF9C4, #FFF176); }
+.bubble-7 { background: linear-gradient(135deg, #F5F5F5, #EEEEEE); }
+.bubble-8 { background: linear-gradient(135deg, #F0E6D8, #E6D5C3); }
+
+/* Safe area */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}

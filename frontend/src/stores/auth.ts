@@ -1,0 +1,72 @@
+import { defineStore } from 'pinia'
+import { ref, computed } from 'vue'
+import { authApi } from '../api/auth'
+
+interface Identity {
+  id: number
+  nickname: string
+  avatar_seed: string
+  created_at: string
+}
+
+interface UserInfo {
+  id: number
+  email: string
+  date_joined: string
+  default_identity: Identity | null
+}
+
+export const useAuthStore = defineStore('auth', () => {
+  const accessToken = ref(localStorage.getItem('access_token') || '')
+  const refreshToken = ref(localStorage.getItem('refresh_token') || '')
+  const userInfo = ref<UserInfo | null>(null)
+
+  const isLoggedIn = computed(() => !!accessToken.value)
+  const identity = computed(() => userInfo.value?.default_identity)
+
+  function setTokens(access: string, refresh: string) {
+    accessToken.value = access
+    refreshToken.value = refresh
+    localStorage.setItem('access_token', access)
+    localStorage.setItem('refresh_token', refresh)
+  }
+
+  async function login(email: string, password: string) {
+    const res = await authApi.login(email, password)
+    const data = res.data.data
+    setTokens(data.access, data.refresh)
+    userInfo.value = data.user
+    return data
+  }
+
+  async function register(email: string, password: string) {
+    const res = await authApi.register(email, password)
+    const data = res.data.data
+    setTokens(data.access, data.refresh)
+    userInfo.value = data.user
+    return data
+  }
+
+  async function fetchMe() {
+    if (!accessToken.value) return
+    try {
+      const res = await authApi.getMe()
+      userInfo.value = res.data.data
+    } catch {
+      logout()
+    }
+  }
+
+  function logout() {
+    accessToken.value = ''
+    refreshToken.value = ''
+    userInfo.value = null
+    localStorage.removeItem('access_token')
+    localStorage.removeItem('refresh_token')
+  }
+
+  return {
+    accessToken, refreshToken, userInfo, isLoggedIn, identity,
+    setTokens, login, register, fetchMe, logout,
+  }
+})
