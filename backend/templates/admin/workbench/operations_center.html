@@ -1,0 +1,55 @@
+{% extends "admin/workbench/_base.html" %}
+
+{% block wb_body %}
+<section class="wb-metrics">
+  <div class="wb-metric danger"><div class="wb-metric-label">硬拦截词</div><div class="wb-metric-value">{{ hard_words_count }}</div></div>
+  <div class="wb-metric warn"><div class="wb-metric-label">软标记词</div><div class="wb-metric-value">{{ soft_words_count }}</div></div>
+  <div class="wb-metric"><div class="wb-metric-label">当前置顶帖</div><div class="wb-metric-value">{{ pinned_posts|length }}</div></div>
+  <div class="wb-metric"><div class="wb-metric-label">生效公告</div><div class="wb-metric-value">{{ active_announcements|length }}</div></div>
+</section>
+
+<section class="wb-split">
+  <div class="wb-card">
+    <h2>置顶帖与公告</h2>
+    <p>运营内容集中管理。</p>
+    <div class="wb-table-list">
+      {% for post in pinned_posts %}
+        <div class="wb-table-row">
+          <div class="wb-table-top"><span>置顶帖 #{{ post.id }}</span><span class="wb-badge warn">到期 {{ post.pinned_until|date:"Y-m-d H:i" }}</span></div>
+          <div class="wb-table-content">{{ post.content|truncatechars:72 }}</div>
+          <div class="wb-actions"><a class="wb-action ghost" href="/admin/posts/post/{{ post.id }}/change/">管理</a></div>
+        </div>
+      {% empty %}
+        <div class="wb-empty">当前没有置顶帖。</div>
+      {% endfor %}
+      {% for item in active_announcements %}
+        <div class="wb-table-row">
+          <div class="wb-table-top"><span>公告: {{ item.title }}</span><span class="wb-badge success">生效中</span></div>
+          <div class="wb-table-content">{{ item.content|truncatechars:88 }}</div>
+          <div class="wb-actions"><a class="wb-action ghost" href="/admin/posts/announcement/{{ item.id }}/change/">管理</a></div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="wb-card">
+    <h2>审核留痕与通知</h2>
+    <p>管理员历史操作记录。</p>
+    <div class="wb-table-list">
+      {% for log in recent_audit_logs %}
+        <div class="wb-table-row">
+          <div class="wb-table-top"><span>{{ log.get_action_display }} · {{ log.target_type }} #{{ log.target_id }}</span><span class="wb-badge">{{ log.auditor|default:"系统" }}</span></div>
+          <div class="wb-table-meta">{{ log.reason }} | {{ log.created_at|date:"Y-m-d H:i" }}</div>
+        </div>
+      {% empty %}
+        <div class="wb-empty">当前没有审核记录。</div>
+      {% endfor %}
+    </div>
+    <div class="wb-actions">
+      <a class="wb-action" href="/admin/moderation/sensitiveword/">管理敏感词</a>
+      <a class="wb-action ghost" href="/admin/moderation/auditlog/">全部审核记录</a>
+      <a class="wb-action ghost" href="/admin/posts/announcement/">管理公告</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

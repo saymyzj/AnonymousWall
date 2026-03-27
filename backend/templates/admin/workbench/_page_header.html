@@ -1,0 +1,24 @@
+<header class="wb-page-header">
+  <div class="wb-page-eyebrow">管理员工作台</div>
+  <h1>{{ wb_page_title }}</h1>
+  <p>{{ wb_page_intro }}</p>
+
+  {% if wb_page_actions %}
+    <div class="wb-page-actions">
+      {% for action in wb_page_actions %}
+        <a class="wb-action {% if action.tone == 'ghost' %}ghost{% elif action.tone == 'warn' %}warn{% elif action.tone == 'danger' %}danger{% elif action.tone == 'success' %}success{% endif %}" href="{{ action.url }}">{{ action.label }}</a>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  {% if wb_page_pills %}
+    <div class="wb-page-summary">
+      {% for pill in wb_page_pills %}
+        <div class="wb-summary-pill {% if pill.tone %}{{ pill.tone }}{% endif %}">
+          <span>{{ pill.label }}</span>
+          <span class="wb-summary-pill-value">{{ pill.value }}</span>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+</header>

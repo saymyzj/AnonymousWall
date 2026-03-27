@@ -1,0 +1,38 @@
+<button class="wb-mobile-toggle" onclick="document.querySelector('.wb-sidebar').classList.toggle('open');document.querySelector('.wb-overlay').classList.toggle('open');">&#9776;</button>
+<div class="wb-overlay" onclick="document.querySelector('.wb-sidebar').classList.remove('open');this.classList.remove('open');"></div>
+
+<aside class="wb-sidebar">
+  <div class="wb-sidebar-brand">
+    <span class="wb-sidebar-kicker">AnonymousWall</span>
+    <h2>管理员工作台</h2>
+    <p>总览 &rarr; 审核 &rarr; 举报 &rarr; 内容 &rarr; 用户 &rarr; 运营</p>
+  </div>
+
+  {% for section in wb_nav_sections %}
+    <nav class="wb-sidebar-section">
+      <div class="wb-sidebar-section-title">{{ section.title }}</div>
+      <div class="wb-sidebar-list">
+        {% for item in section.items %}
+          <a class="wb-sidebar-link {% if item.is_active %}active{% endif %}" href="{{ item.url }}">
+            <div class="wb-sidebar-link-top">
+              <span>{{ item.label }}</span>
+              {% if item.badge != '' and item.badge != None %}
+                <span class="wb-sidebar-badge {% if item.tone %}{{ item.tone }}{% endif %}">{{ item.badge }}</span>
+              {% endif %}
+            </div>
+            {% if item.description %}
+              <div class="wb-sidebar-link-meta">{{ item.description }}</div>
+            {% endif %}
+          </a>
+        {% endfor %}
+      </div>
+    </nav>
+  {% endfor %}
+
+  <div style="margin-top:auto; padding-top:12px; border-top:1px solid rgba(255,255,255,.08);">
+    <a class="wb-sidebar-link" href="/admin/" style="opacity:.7;">
+      <div class="wb-sidebar-link-top"><span>Django 原始后台</span></div>
+      <div class="wb-sidebar-link-meta">回到 SimpleUI 默认管理界面</div>
+    </a>
+  </div>
+</aside>

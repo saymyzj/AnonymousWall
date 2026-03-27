@@ -1,109 +1,213 @@
 <template>
   <div class="create-page">
-    <div class="create-header">
-      <button class="back-btn" @click="$router.back()">← 返回</button>
-      <h2>发帖</h2>
-      <button class="publish-btn" :disabled="!canPublish || loading" @click="publish">
-        {{ loading ? '发布中...' : '发布' }}
+    <div class="page-actions">
+      <button class="ghost-pill" type="button" @click="saveDraft">存草稿</button>
+      <button class="pill-button brand" type="button" :disabled="!canPublish || loading" @click="publish">
+        {{ loading ? '发布中...' : '发布 ✦' }}
       </button>
     </div>
 
-    <div class="create-grid">
-      <!-- Left: Editor -->
-      <div class="editor-col">
-        <div class="editor-card">
-          <textarea
-            v-model="content"
-            placeholder="说点什么吧..."
-            maxlength="500"
-          ></textarea>
-          <div class="char-count">{{ content.length }}/500</div>
+    <div class="layout">
+      <section class="editor">
+        <h1 class="editor-title"><span>✨</span> 创建新气泡</h1>
+
+        <div class="field">
+          <div class="field-label">匿名身份</div>
+          <div class="identity-bar">
+            <div class="id-avatar">{{ avatarText }}</div>
+            <div>
+              <div class="id-name">{{ authStore.identity?.nickname || '匿名气泡' }}</div>
+              <div class="id-sub">仅用于本次发布</div>
+            </div>
+            <button class="id-refresh" type="button" @click="refreshIdentity">🎲 换</button>
+          </div>
         </div>
 
-        <!-- Tag Selection -->
-        <div class="section">
-          <h3>标签（必选一个）</h3>
-          <div class="tag-options">
+        <div class="field">
+          <div class="field-label">内容 <span class="req">*</span></div>
+          <textarea
+            v-model="content"
+            rows="6"
+            maxlength="500"
+            placeholder="写下你想对世界说的话..."
+          ></textarea>
+          <div class="count-row">
+            <span :class="{ warn: content.length > 450 }">{{ content.length }} / 500</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="field-label">标签 <span class="req">*</span></div>
+          <div class="tags">
             <button
-              v-for="t in tagOptions"
-              :key="t.value"
-              class="tag-option"
-              :class="{ active: tag === t.value }"
-              @click="tag = t.value"
+              v-for="option in tagOptions"
+              :key="option.value"
+              class="tag"
+              :class="{ active: tag === option.value }"
+              type="button"
+              @click="tag = option.value"
             >
-              {{ t.emoji }} {{ t.label }}
+              {{ option.emoji }} {{ option.label }}
             </button>
           </div>
         </div>
 
-        <!-- Background Color -->
-        <div class="section">
-          <h3>背景色</h3>
-          <div class="color-options">
+        <div class="field">
+          <div class="field-label">气泡配色</div>
+          <div class="colors">
             <button
-              v-for="c in colorOptions"
-              :key="c.value"
-              class="color-dot"
-              :class="[`bubble-${c.value}`, { active: bgColor === c.value }]"
-              @click="bgColor = c.value"
+              v-for="option in colorOptions"
+              :key="option.value"
+              class="cdot"
+              :class="[option.className, { active: bgColor === option.value }]"
+              type="button"
+              @click="bgColor = option.value"
             ></button>
           </div>
         </div>
 
-        <!-- Future Features -->
-        <div class="section">
-          <h3>更多选项</h3>
-          <div class="future-row">
-            <button class="future-btn" disabled title="即将上线">📊 投票</button>
-            <button class="future-btn" disabled title="即将上线">💣 阅后即焚</button>
-            <button class="future-btn" disabled title="即将上线">📎 附件</button>
+        <div class="field">
+          <div class="field-label">图片 <span class="sub">（可选，最多 3 张）</span></div>
+          <div class="img-row">
+            <label
+              v-for="(image, index) in previewImages"
+              :key="index"
+              class="img-box"
+              :class="{ filled: !!image }"
+            >
+              <template v-if="image">
+                <img :src="image" alt="" />
+                <button class="rm" type="button" @click.prevent="removeImage(index)">✕</button>
+              </template>
+              <template v-else>
+                <span class="plus">+</span>
+                <span>上传</span>
+              </template>
+              <input
+                class="visually-hidden"
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                @change="onSelectImage($event, index)"
+              />
+            </label>
           </div>
         </div>
 
-        <p v-if="errorMsg" class="error-msg">{{ errorMsg }}</p>
-      </div>
+        <div class="field">
+          <div class="field-label">⏱️ 自毁时间</div>
+          <div class="timer-row">
+            <button
+              v-for="option in destroyOptions"
+              :key="option.label"
+              class="tc"
+              :class="{ active: destroyAfterHours === option.value }"
+              type="button"
+              @click="destroyAfterHours = option.value"
+            >
+              {{ option.label }}
+            </button>
+          </div>
+        </div>
 
-      <!-- Right: Live Preview -->
-      <div class="preview-col">
-        <h3 class="preview-label">预览效果</h3>
-        <div class="preview-bubble" :class="`bubble-${bgColor}`">
-          <div class="pv-header">
-            <div class="pv-avatar">?</div>
-            <div class="pv-meta">
-              <span class="pv-nick">匿名用户</span>
-              <span class="pv-time">刚刚</span>
+        <div class="field">
+          <div class="tgl-row">
+            <div class="tgl-txt">允许匿名私信</div>
+            <button class="tgl" :class="{ on: allowMessages }" type="button" @click="allowMessages = !allowMessages"></button>
+          </div>
+          <div class="tgl-row">
+            <div class="tgl-txt">附加投票</div>
+            <button class="tgl" :class="{ on: pollEnabled }" type="button" @click="pollEnabled = !pollEnabled"></button>
+          </div>
+        </div>
+
+        <div v-if="pollEnabled" class="field poll-builder">
+          <div class="field-label">投票设置</div>
+          <input v-model="pollQuestion" class="poll-input" type="text" maxlength="120" placeholder="投票问题（可选）" />
+          <div class="poll-options">
+            <input
+              v-for="(_, index) in pollOptions"
+              :key="index"
+              v-model="pollOptions[index]"
+              class="poll-input"
+              type="text"
+              maxlength="30"
+              :placeholder="`选项 ${index + 1}`"
+            />
+          </div>
+          <div class="poll-builder-actions">
+            <button v-if="pollOptions.length < 6" class="ghost-pill" type="button" @click="pollOptions.push('')">新增选项</button>
+            <select v-model="pollExpireDays" class="poll-select">
+              <option :value="1">1 天</option>
+              <option :value="3">3 天</option>
+              <option :value="7">7 天</option>
+            </select>
+          </div>
+        </div>
+
+        <p v-if="notice" class="notice">{{ notice }}</p>
+      </section>
+
+      <aside class="preview">
+        <div class="preview-title">✦ 实时预览</div>
+
+        <article class="preview-bubble bubble-surface" :class="`bubble-${bgColor}`">
+          <div class="p-tag">{{ currentTagLabel }}</div>
+          <div class="p-content" :class="{ placeholder: !content.trim() }">
+            {{ content.trim() || '你的气泡内容将显示在这里...' }}
+          </div>
+
+          <div v-if="filledPreviewImages.length" class="p-images">
+            <div v-for="image in filledPreviewImages" :key="image" class="p-img">
+              <img :src="image" alt="" />
             </div>
           </div>
-          <p class="pv-content" :class="{ empty: !content }">
-            {{ content || '在左侧输入内容，预览将实时显示...' }}
-          </p>
-          <div class="pv-footer">
-            <span v-if="tag" class="tag-capsule">{{ tagEmoji(tag) }} {{ tag }}</span>
-            <div class="pv-stats">
-              <span>♡ 0</span>
+
+          <div class="p-footer">
+            <div class="p-author">
+              <div class="p-av">{{ avatarText }}</div>
+              <div class="p-name">{{ authStore.identity?.nickname || '匿名气泡' }}</div>
+            </div>
+            <div class="p-stats">
+              <span>❤️ 0</span>
               <span>💬 0</span>
             </div>
           </div>
-        </div>
-      </div>
+        </article>
+
+        <p class="preview-hint">
+          这是你的气泡在星空中的样子。左侧的修改会实时反映在这里。
+        </p>
+      </aside>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { postsApi } from '../api/posts'
-import { showToast } from 'vant'
+import { useAuthStore } from '../stores/auth'
+import { getIdentityInitial, tagEmoji } from '../utils/presentation'
 
 const router = useRouter()
-const content = ref('')
-const tag = ref('')
-const bgColor = ref(7)
-const loading = ref(false)
-const errorMsg = ref('')
+const authStore = useAuthStore()
 
-const canPublish = computed(() => content.value.trim().length > 0 && tag.value)
+const DRAFT_KEY = 'anonymouswall-create-draft'
+const FLASH_KEY = 'anonymouswall-flash'
+
+const content = ref('')
+const tag = ref('树洞')
+const bgColor = ref(3)
+const allowMessages = ref(true)
+const destroyAfterHours = ref<number | null>(null)
+const previewImages = ref<Array<string | null>>([null, null, null])
+const imageFiles = ref<Array<File | null>>([null, null, null])
+const pollEnabled = ref(false)
+const pollQuestion = ref('')
+const pollExpireDays = ref(3)
+const pollOptions = ref(['', ''])
+const loading = ref(false)
+const notice = ref('')
 
 const tagOptions = [
   { label: '表白', value: '表白', emoji: '💌' },
@@ -115,310 +219,594 @@ const tagOptions = [
 ]
 
 const colorOptions = [
-  { value: 1 }, { value: 2 }, { value: 3 }, { value: 4 },
-  { value: 5 }, { value: 6 }, { value: 7 }, { value: 8 },
+  { value: 1, className: 'bubble-1' },
+  { value: 2, className: 'bubble-2' },
+  { value: 3, className: 'bubble-3' },
+  { value: 4, className: 'bubble-4' },
+  { value: 5, className: 'bubble-5' },
+  { value: 6, className: 'bubble-6' },
+  { value: 7, className: 'bubble-7' },
+  { value: 8, className: 'bubble-8' },
 ]
 
-function tagEmoji(tagVal: string) {
-  const map: Record<string, string> = {
-    '表白': '💌', '吐槽': '😤', '求助': '🆘',
-    '树洞': '🕳️', '失物招领': '🔍', '搭子': '🤝',
+const destroyOptions = [
+  { label: '24h', value: 24 },
+  { label: '48h', value: 48 },
+  { label: '7天', value: 24 * 7 },
+  { label: '永久', value: null },
+]
+
+const avatarText = computed(() => getIdentityInitial(authStore.identity?.nickname || '星'))
+const canPublish = computed(() => content.value.trim() && tag.value)
+const currentTagLabel = computed(() => `${tagEmoji(tag.value)} ${tag.value}`)
+const filledPreviewImages = computed(() => previewImages.value.filter(Boolean) as string[])
+
+function showNotice(message: string) {
+  notice.value = message
+  window.setTimeout(() => {
+    if (notice.value === message) notice.value = ''
+  }, 2200)
+}
+
+function saveDraft() {
+  localStorage.setItem(
+    DRAFT_KEY,
+    JSON.stringify({
+      content: content.value,
+      tag: tag.value,
+      bgColor: bgColor.value,
+      allowMessages: allowMessages.value,
+      destroyAfterHours: destroyAfterHours.value,
+    }),
+  )
+  showNotice('草稿已保存到本地')
+}
+
+async function refreshIdentity() {
+  try {
+    await authStore.refreshIdentity()
+    showNotice('已切换匿名身份')
+  } catch {
+    showNotice('切换匿名身份失败，请稍后重试')
   }
-  return map[tagVal] || ''
+}
+
+function onSelectImage(event: Event, index: number) {
+  const file = (event.target as HTMLInputElement).files?.[0]
+  if (!file) return
+  imageFiles.value[index] = file
+  const reader = new FileReader()
+  reader.onload = () => {
+    previewImages.value[index] = String(reader.result)
+  }
+  reader.readAsDataURL(file)
+}
+
+function removeImage(index: number) {
+  previewImages.value[index] = null
+  imageFiles.value[index] = null
 }
 
 async function publish() {
-  errorMsg.value = ''
+  if (!canPublish.value) return
   loading.value = true
+  notice.value = ''
+
   try {
-    await postsApi.create({
-      content: content.value,
-      tag: tag.value,
-      bg_color: bgColor.value,
+    const formData = new FormData()
+    formData.append('content', content.value.trim())
+    formData.append('tag', tag.value)
+    formData.append('bg_color', String(bgColor.value))
+    formData.append('allow_messages', String(allowMessages.value))
+    if (destroyAfterHours.value !== null) {
+      formData.append('destroy_after_hours', String(destroyAfterHours.value))
+    }
+    imageFiles.value.filter(Boolean).forEach((file) => {
+      formData.append('images', file as File)
     })
-    showToast('发布成功')
+    if (pollEnabled.value) {
+      formData.append('poll_enabled', 'true')
+      formData.append('poll_question', pollQuestion.value.trim())
+      formData.append('poll_expire_days', String(pollExpireDays.value))
+      pollOptions.value.map((option) => option.trim()).filter(Boolean).forEach((option) => {
+        formData.append('poll_options', option)
+      })
+    }
+
+    const res = await postsApi.create(formData)
+    localStorage.removeItem(DRAFT_KEY)
+    sessionStorage.setItem(FLASH_KEY, res.data.message || '发布成功')
+    const created = res.data.data
+    if (created?.status === 'rejected') {
+      router.push('/profile')
+      return
+    }
     router.push('/')
-  } catch (e: any) {
-    errorMsg.value = e.response?.data?.message || '发布失败'
+  } catch (error: any) {
+    showNotice(error.response?.data?.message || '发布失败，请稍后再试')
   } finally {
     loading.value = false
+  }
+}
+
+const savedDraft = localStorage.getItem(DRAFT_KEY)
+if (savedDraft) {
+  try {
+    const parsed = JSON.parse(savedDraft)
+    content.value = parsed.content || ''
+    tag.value = parsed.tag || '树洞'
+    bgColor.value = parsed.bgColor || 3
+    allowMessages.value = parsed.allowMessages ?? true
+    destroyAfterHours.value = parsed.destroyAfterHours ?? null
+  } catch {
+    localStorage.removeItem(DRAFT_KEY)
   }
 }
 </script>
 
 <style scoped>
 .create-page {
-  max-width: 960px;
-  margin: 0 auto;
+  position: relative;
 }
 
-.create-header {
+.page-actions {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 28px;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-bottom: 18px;
 }
 
-.create-header h2 {
-  font-size: 20px;
-  font-weight: 600;
-}
-
-.back-btn {
-  background: none;
-  border: none;
-  font-size: 14px;
-  cursor: pointer;
-  color: var(--text-secondary);
-  font-weight: 500;
-  transition: color 0.2s;
-}
-
-.back-btn:hover {
-  color: var(--brand-primary);
-  transform: none;
-}
-
-.publish-btn {
-  background: var(--brand-primary);
-  color: white;
-  border: none;
-  border-radius: 20px;
-  padding: 10px 28px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.publish-btn:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(124, 92, 252, 0.3);
-}
-
-.publish-btn:disabled {
-  opacity: 0.4;
-}
-
-/* Grid */
-.create-grid {
+.layout {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 36px;
-  align-items: start;
+  grid-template-columns: minmax(0, 1fr) 400px;
+  min-height: calc(100vh - 180px);
+  border-radius: 28px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
 }
 
-/* Editor */
-.editor-card {
-  background: white;
-  border-radius: 20px;
-  padding: 20px;
-  margin-bottom: 24px;
-  border: 1.5px solid var(--divider);
-  transition: border-color 0.2s;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+.editor,
+.preview {
+  padding: 40px 32px 56px;
 }
 
-.editor-card:focus-within {
-  border-color: var(--brand-primary);
-  box-shadow: 0 0 0 3px rgba(124, 92, 252, 0.08);
+.editor {
+  border-right: 1px solid rgba(255, 255, 255, 0.04);
 }
 
-.editor-card textarea {
-  width: 100%;
-  min-height: 280px;
-  background: transparent;
-  border: none;
-  outline: none;
-  font-size: 15px;
-  line-height: 24px;
-  color: var(--text-primary);
-  resize: none;
-  font-family: inherit;
-}
-
-.char-count {
-  text-align: right;
-  font-size: 12px;
-  color: var(--text-placeholder);
-  margin-top: 8px;
-}
-
-.section {
-  margin-bottom: 24px;
-}
-
-.section h3 {
-  font-size: 14px;
-  font-weight: 600;
-  margin-bottom: 12px;
-  color: var(--text-primary);
-}
-
-.tag-options {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.tag-option {
-  padding: 7px 16px;
-  border-radius: 999px;
-  border: 1.5px solid var(--divider);
-  background: white;
-  color: var(--text-secondary);
-  font-size: 13px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.tag-option:hover:not(.active) {
-  border-color: var(--brand-primary);
-  color: var(--brand-primary);
-}
-
-.tag-option.active {
-  background: var(--brand-primary);
-  color: white;
-  border-color: var(--brand-primary);
-}
-
-.color-options {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.color-dot {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border: 3px solid transparent;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.color-dot:hover {
-  transform: scale(1.3);
-}
-
-.color-dot.active {
-  border-color: var(--brand-primary);
-  box-shadow: 0 0 0 2px white, 0 0 0 4px var(--brand-primary);
-  transform: scale(1.15);
-}
-
-.future-row {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.future-btn {
-  padding: 7px 16px;
-  border-radius: 999px;
-  border: 1.5px dashed var(--divider);
-  background: transparent;
-  color: var(--text-placeholder);
-  font-size: 13px;
-  cursor: not-allowed;
-}
-
-.error-msg {
-  color: var(--color-error);
-  font-size: 13px;
-  text-align: center;
-}
-
-/* Preview */
-.preview-col {
-  position: sticky;
-  top: 88px;
-}
-
-.preview-label {
-  font-size: 14px;
-  font-weight: 600;
-  margin-bottom: 12px;
-  color: var(--text-secondary);
-}
-
-.preview-bubble {
-  border-radius: 20px;
-  padding: 24px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  transition: all 0.3s ease;
-}
-
-.pv-header {
+.editor-title {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 14px;
+  margin: 0 0 32px;
+  font-size: 1.375rem;
 }
 
-.pv-avatar {
+.field {
+  margin-bottom: 28px;
+}
+
+.field-label {
+  margin-bottom: 10px;
+  color: var(--text-2);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.field-label .req {
+  color: var(--pink);
+}
+
+.field-label .sub {
+  color: var(--text-3);
+  font-weight: 400;
+}
+
+.identity-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+}
+
+.id-avatar {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #a78bfa, #7c5cfc);
-  display: flex;
+  background: var(--gradient-brand);
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: white;
-  font-size: 14px;
+  color: #fff;
+  font-weight: 700;
+}
+
+.id-name {
+  font-size: 0.875rem;
   font-weight: 600;
 }
 
-.pv-meta {
+.id-sub {
+  color: var(--text-3);
+  font-size: 0.6875rem;
+}
+
+.id-refresh {
+  margin-left: auto;
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-3);
+}
+
+.id-refresh:hover {
+  color: var(--brand);
+  border-color: rgba(124, 92, 252, 0.3);
+}
+
+textarea {
+  width: 100%;
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text-1);
+  line-height: 1.8;
+  resize: none;
+  outline: none;
+}
+
+textarea::placeholder {
+  color: var(--text-3);
+}
+
+textarea:focus {
+  border-color: rgba(124, 92, 252, 0.4);
+  box-shadow: 0 0 0 3px rgba(124, 92, 252, 0.08);
+}
+
+.count-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 6px;
+}
+
+.count-row span {
+  color: var(--text-3);
+  font-size: 0.75rem;
+}
+
+.count-row .warn {
+  color: var(--pink);
+}
+
+.tags,
+.colors,
+.timer-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tag,
+.tc {
+  min-height: 38px;
+  padding: 0 16px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-2);
+}
+
+.tag.active,
+.tc.active {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #fff;
+  box-shadow: 0 2px 12px rgba(124, 92, 252, 0.25);
+}
+
+.cdot {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+}
+
+.cdot.active {
+  border-color: #fff;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.15);
+}
+
+.img-row {
+  display: flex;
+  gap: 12px;
+}
+
+.img-box {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  border-radius: 16px;
+  border: 2px dashed rgba(255, 255, 255, 0.08);
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: var(--text-3);
+  overflow: hidden;
+  cursor: pointer;
 }
 
-.pv-nick {
-  font-size: 13px;
-  font-weight: 600;
+.img-box:hover {
+  border-color: var(--brand);
+  color: var(--brand);
+  background: rgba(124, 92, 252, 0.03);
 }
 
-.pv-time {
-  font-size: 12px;
-  color: var(--text-secondary);
+.img-box.filled {
+  border-style: solid;
 }
 
-.pv-content {
-  font-size: 15px;
-  line-height: 24px;
-  margin-bottom: 14px;
-  word-break: break-word;
-  white-space: pre-wrap;
+.img-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
-.pv-content.empty {
-  color: var(--text-placeholder);
-  font-style: italic;
+.plus {
+  font-size: 1.5rem;
+  line-height: 1;
 }
 
-.pv-footer {
+.rm {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 0;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+}
+
+.tgl-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding: 10px 0;
 }
 
-.tag-capsule {
-  display: inline-block;
-  padding: 3px 10px;
-  border-radius: 999px;
-  font-size: 11px;
-  background: rgba(0, 0, 0, 0.06);
-  color: var(--text-secondary);
+.tgl-row + .tgl-row {
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
 }
 
-.pv-stats {
+.tgl-txt {
+  color: var(--text-2);
+  font-size: 0.8125rem;
+}
+
+.tgl {
+  width: 40px;
+  height: 22px;
+  position: relative;
+  border: 0;
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.tgl::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.3s ease;
+}
+
+.tgl.on {
+  background: var(--brand);
+}
+
+.tgl.on::after {
+  transform: translateX(18px);
+}
+
+.notice {
+  color: var(--pink);
+  font-size: 0.8125rem;
+}
+
+.poll-builder {
   display: flex;
-  gap: 14px;
-  font-size: 13px;
-  color: var(--text-secondary);
-  opacity: 0.6;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.poll-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.poll-input,
+.poll-select {
+  min-height: 42px;
+  padding: 0 14px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-1);
+}
+
+.poll-builder-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.preview-title {
+  margin-bottom: 24px;
+  color: var(--text-2);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.preview-bubble {
+  width: 100%;
+  max-width: 340px;
+  padding: 22px;
+  border-radius: 24px;
+}
+
+.p-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-2);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.p-content {
+  min-height: 44px;
+  margin-bottom: 16px;
+  color: var(--text-1);
+  line-height: 1.7;
+}
+
+.p-content.placeholder {
+  color: var(--text-3);
+  font-style: italic;
+}
+
+.p-images {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.p-img {
+  width: 60px;
+  height: 60px;
+  overflow: hidden;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.p-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.p-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.p-author {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.p-av {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--gradient-brand);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.p-name {
+  color: var(--text-2);
+  font-size: 0.8125rem;
+}
+
+.p-stats {
+  display: flex;
+  gap: 12px;
+  color: var(--text-3);
+  font-size: 0.75rem;
+}
+
+.preview-hint {
+  margin-top: 24px;
+  max-width: 280px;
+  text-align: center;
+  color: var(--text-3);
+  font-size: 0.75rem;
+  line-height: 1.6;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 960px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .editor {
+    border-right: 0;
+  }
+
+  .preview {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .page-actions {
+    justify-content: stretch;
+  }
+
+  .page-actions > * {
+    flex: 1;
+  }
+
+  .editor {
+    padding: 32px 16px 48px;
+  }
 }
 </style>

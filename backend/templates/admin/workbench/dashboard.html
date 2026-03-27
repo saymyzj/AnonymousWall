@@ -1,0 +1,142 @@
+{% extends "admin/workbench/_base.html" %}
+
+{% block wb_body %}
+<section class="wb-metrics">
+  <div class="wb-metric"><div class="wb-metric-label">今日发帖</div><div class="wb-metric-value">{{ metrics.today_post_count }}</div></div>
+  <div class="wb-metric"><div class="wb-metric-label">今日评论</div><div class="wb-metric-value">{{ metrics.today_comment_count }}</div></div>
+  <div class="wb-metric"><div class="wb-metric-label">活跃用户</div><div class="wb-metric-value">{{ metrics.today_active_users }}</div></div>
+  <div class="wb-metric danger"><div class="wb-metric-label">待审核</div><div class="wb-metric-value">{{ metrics.pending_content_count }}</div></div>
+  <div class="wb-metric warn"><div class="wb-metric-label">待处理举报</div><div class="wb-metric-value">{{ metrics.pending_reports_count }}</div></div>
+  <div class="wb-metric"><div class="wb-metric-label">待认证用户</div><div class="wb-metric-value">{{ metrics.pending_verification_count }}</div></div>
+</section>
+
+<section class="wb-grid three">
+  <div class="wb-card">
+    <h2>优先处理</h2>
+    <p>按风险程度排列的三条工作主线入口。</p>
+    <div class="wb-link-list">
+      <a class="wb-link-item" href="/admin/workbench/review-queue/">
+        <div class="wb-link-top"><span>人工审核</span><span class="wb-badge danger">{{ metrics.pending_content_count }}</span></div>
+        <div class="wb-link-meta">待审核 + AI 存疑 + 被举报内容</div>
+      </a>
+      <a class="wb-link-item" href="/admin/workbench/reports/">
+        <div class="wb-link-top"><span>举报处理</span><span class="wb-badge warn">{{ metrics.pending_reports_count }}</span></div>
+        <div class="wb-link-meta">从用户举报线索定位争议内容</div>
+      </a>
+      <a class="wb-link-item" href="/admin/workbench/users/">
+        <div class="wb-link-top"><span>用户追踪</span><span class="wb-badge">{{ metrics.pending_verification_count }}</span></div>
+        <div class="wb-link-meta">待认证、禁言中和高风险用户</div>
+      </a>
+    </div>
+  </div>
+
+  <div class="wb-card">
+    <h2>内容与运营</h2>
+    <p>日常巡检和运营配置入口。</p>
+    <div class="wb-link-list">
+      <a class="wb-link-item" href="/admin/workbench/content/?kind=post">
+        <div class="wb-link-top"><span>内容中心</span><span class="wb-badge">帖子 / 评论</span></div>
+        <div class="wb-link-meta">按类型筛选查看内容状态</div>
+      </a>
+      <a class="wb-link-item" href="/admin/workbench/operations/">
+        <div class="wb-link-top"><span>运营配置</span><span class="wb-badge">{{ metrics.active_announcement_count }} 公告</span></div>
+        <div class="wb-link-meta">敏感词、置顶、公告与审核留痕</div>
+      </a>
+      <a class="wb-link-item" href="/admin/workbench/recommendation/">
+        <div class="wb-link-top"><span>推荐系统</span><span class="wb-badge">调试</span></div>
+        <div class="wb-link-meta">查看用户画像与推荐结果拆解</div>
+      </a>
+    </div>
+  </div>
+
+  <div class="wb-card">
+    <h2>状态提醒</h2>
+    <p>需要关注的边缘状态。</p>
+    <div class="wb-link-list">
+      <a class="wb-link-item" href="/admin/workbench/content/?kind=post&status=ai_suspect">
+        <div class="wb-link-top"><span>AI 存疑内容</span><span class="wb-badge warn">{{ metrics.ai_suspect_count }}</span></div>
+        <div class="wb-link-meta">建议在审核队列或内容中心优先查看</div>
+      </a>
+      <a class="wb-link-item" href="/admin/workbench/users/">
+        <div class="wb-link-top"><span>禁言中用户</span><span class="wb-badge">{{ metrics.banned_user_count }}</span></div>
+        <div class="wb-link-meta">可在用户中心查看处罚详情</div>
+      </a>
+      <a class="wb-link-item" href="/admin/workbench/operations/">
+        <div class="wb-link-top"><span>当前置顶帖</span><span class="wb-badge">{{ metrics.pinned_post_count }}</span></div>
+        <div class="wb-link-meta">运营配置页追踪置顶与公告状态</div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section class="wb-split">
+  <div class="wb-card">
+    <h2>近 7 天内容趋势</h2>
+    <p>帖子、评论与活跃用户的日变化。</p>
+    <div class="wb-table-list">
+      {% for row in trends %}
+        <div class="wb-table-row">
+          <div class="wb-table-top">
+            <span>{{ row.label }}</span>
+            <span style="display:flex; gap:6px;">
+              <span class="wb-badge">帖 {{ row.posts }}</span>
+              <span class="wb-badge warn">评 {{ row.comments }}</span>
+              <span class="wb-badge success">活 {{ row.users }}</span>
+            </span>
+          </div>
+          <div class="wb-trend-bars">
+            <div class="wb-trend-bar posts" style="height:{{ row.posts_width }}px; width:30%;"></div>
+            <div class="wb-trend-bar comments" style="height:{{ row.comments_width }}px; width:30%;"></div>
+            <div class="wb-trend-bar users" style="height:{{ row.users_width }}px; width:30%;"></div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="wb-card">
+    <h2>待处理审核</h2>
+    <p>优先级最高的内容，可直接跳转处理。</p>
+    <div class="wb-table-list">
+      {% for item in queue_rows %}
+        <div class="wb-table-row">
+          <div class="wb-table-top">
+            <span>{{ item.kind }} #{{ item.id }}</span>
+            <span class="wb-badge {% if item.report_count %}danger{% elif item.status == 'AI存疑' %}warn{% endif %}">{{ item.status }}</span>
+          </div>
+          <div class="wb-table-content">{{ item.content }}</div>
+          <div class="wb-table-meta">AI: {{ item.ai_decision }} | 举报: {{ item.report_count }} | {{ item.author }}</div>
+          <div class="wb-actions">
+            <a class="wb-action" href="{{ item.target_link }}">处理</a>
+            <a class="wb-action ghost" href="{{ item.author_link }}">用户</a>
+          </div>
+        </div>
+      {% empty %}
+        <div class="wb-empty">当前没有待处理审核内容。</div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+{% if report_rows %}
+<section class="wb-card">
+  <h2>待处理举报</h2>
+  <p>最新的举报线索。</p>
+  <div class="wb-table-list">
+    {% for item in report_rows %}
+      <div class="wb-table-row">
+        <div class="wb-table-top">
+          <span>{{ item.target_type }} 举报 #{{ item.id }}</span>
+          <span class="wb-badge danger">{{ item.reason }}</span>
+        </div>
+        <div class="wb-table-content">{{ item.target_preview }}</div>
+        <div class="wb-table-meta">举报人: {{ item.reporter }} | 被举报作者: {{ item.author_email }}</div>
+        <div class="wb-actions">
+          <a class="wb-action" href="{{ item.report_link }}">处理举报</a>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+{% endblock %}

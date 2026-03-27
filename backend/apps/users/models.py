@@ -19,6 +19,12 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractUser):
+    THEME_CHOICES = [
+        ('system', '跟随系统'),
+        ('dark', '深色'),
+        ('light', '浅色'),
+    ]
+
     username = None
     email = models.EmailField('邮箱', unique=True)
     student_id = models.CharField('学号/工号', max_length=30, blank=True, default='')
@@ -26,6 +32,7 @@ class User(AbstractUser):
     is_verified = models.BooleanField('是否已验证', default=False)
     is_banned = models.BooleanField('是否禁言', default=False)
     ban_until = models.DateTimeField('禁言截止时间', null=True, blank=True)
+    theme_preference = models.CharField('主题偏好', max_length=10, choices=THEME_CHOICES, default='system')
 
     objects = UserManager()
 

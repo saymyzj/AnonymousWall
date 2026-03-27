@@ -13,8 +13,12 @@ interface UserInfo {
   id: number
   email: string
   student_id: string
+  real_name: string
   is_verified: boolean
+  is_banned: boolean
+  ban_until: string | null
   date_joined: string
+  theme_preference: 'system' | 'dark' | 'light'
   default_identity: Identity | null
 }
 
@@ -42,12 +46,24 @@ export const useAuthStore = defineStore('auth', () => {
     return data
   }
 
-  async function register(email: string, password: string, student_id: string, real_name: string) {
-    const res = await authApi.register({ email, password, student_id, real_name })
+  async function register(email: string, password: string, studentId: string, realName?: string) {
+    const res = await authApi.register({ email, password, student_id: studentId, real_name: realName })
     const data = res.data.data
     setTokens(data.access, data.refresh)
     userInfo.value = data.user
     return data
+  }
+
+  async function updatePreferences(data: Partial<Pick<UserInfo, 'theme_preference' | 'real_name' | 'student_id'>>) {
+    const res = await authApi.updatePreferences(data)
+    userInfo.value = res.data.data
+    return res.data.data
+  }
+
+  async function refreshIdentity() {
+    const res = await authApi.refreshIdentity()
+    userInfo.value = res.data.data
+    return res.data.data
   }
 
   async function fetchMe() {
@@ -70,6 +86,6 @@ export const useAuthStore = defineStore('auth', () => {
 
   return {
     accessToken, refreshToken, userInfo, isLoggedIn, isVerified, identity,
-    setTokens, login, register, fetchMe, logout,
+    setTokens, login, register, fetchMe, updatePreferences, refreshIdentity, logout,
   }
 })

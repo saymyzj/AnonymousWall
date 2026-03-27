@@ -2,16 +2,25 @@
   <div class="layout">
     <StarryBackground />
 
-    <!-- Navbar -->
     <nav class="navbar">
-      <!-- Left: Logo -->
-      <router-link to="/" class="logo">
-        <span class="logo-icon">🫧</span>
-        <span class="logo-text">AnonymousWall</span>
-      </router-link>
+      <div class="nav-left">
+        <button
+          v-if="isDetailRoute"
+          class="icon-shell nav-back"
+          type="button"
+          aria-label="返回"
+          @click="goBack"
+        >
+          ←
+        </button>
 
-      <!-- Center: Tabs / Search (scroll-linked) -->
-      <div class="nav-center">
+        <router-link to="/" class="logo" aria-label="返回首页">
+          <span class="logo-icon">🫧</span>
+          <span class="logo-text">AnonymousWall</span>
+        </router-link>
+      </div>
+
+      <div v-if="showCenterSlot" class="nav-center">
         <Transition name="fade" mode="out-in">
           <div v-if="showNavTabs" key="tabs" class="nav-tabs">
             <button
@@ -19,50 +28,82 @@
               :key="tab.value"
               class="nav-tab"
               :class="{ active: activeNavTab === tab.value }"
+              type="button"
               @click="switchNavTab(tab.value)"
             >
               {{ tab.label }}
             </button>
           </div>
-          <div v-else key="search" class="nav-search">
+
+          <form v-else key="search" class="nav-search" @submit.prevent="submitSearch">
             <span class="search-icon">🔍</span>
             <input
               v-model="searchQuery"
+              type="search"
               placeholder="搜索匿名心声..."
-              @keyup.enter="doSearch"
+              aria-label="搜索匿名心声"
             />
-            <button v-if="searchQuery" class="search-clear" @click="clearSearch">×</button>
-          </div>
+            <button v-if="searchQuery" class="search-clear" type="button" @click="clearSearch">
+              ×
+            </button>
+          </form>
         </Transition>
       </div>
 
-      <!-- Right: User Area -->
       <div class="nav-right">
+        <button
+          v-if="authStore.isLoggedIn"
+          class="icon-shell"
+          type="button"
+          title="通知中心"
+          @click="router.push('/messages?tab=notifications')"
+        >
+          🔔
+          <span v-if="unreadNotifications" class="dot"></span>
+        </button>
+
+        <button
+          v-if="authStore.isLoggedIn"
+          class="icon-shell"
+          type="button"
+          title="消息中心"
+          @click="router.push('/messages?tab=messages')"
+        >
+          ✉️
+          <span v-if="unreadMessages" class="dot secondary"></span>
+        </button>
+
+        <button
+          class="icon-shell"
+          type="button"
+          :title="`切换主题模式，当前：${themeTitle}`"
+          @click="cycleTheme"
+        >
+          {{ themeIcon }}
+        </button>
+
         <template v-if="authStore.isLoggedIn">
-          <router-link to="/messages" class="nav-icon-btn" title="消息">
-            🔔
-            <span v-if="unreadCount" class="badge">{{ unreadCount > 9 ? '9+' : unreadCount }}</span>
-          </router-link>
           <div class="user-menu" @mouseenter="showUserMenu = true" @mouseleave="showUserMenu = false">
-            <div class="avatar-btn">
+            <button class="avatar-btn" type="button" aria-label="打开用户菜单">
               {{ avatarEmoji }}
-            </div>
+            </button>
+
             <Transition name="dropdown">
               <div v-if="showUserMenu" class="dropdown-menu">
                 <router-link to="/profile" class="dropdown-item">
-                  <span>👤</span> 个人中心
-                </router-link>
-                <router-link to="/messages" class="dropdown-item">
-                  <span>✉️</span> 消息中心
+                  <span>👤</span>
+                  <span>个人中心</span>
                 </router-link>
                 <div class="dropdown-divider"></div>
-                <button class="dropdown-item logout" @click="handleLogout">
-                  <span>🚪</span> 退出登录
+                <button class="dropdown-item logout" type="button" @click="handleLogout">
+                  <span>🚪</span>
+                  <span>退出登录</span>
                 </button>
               </div>
             </Transition>
           </div>
         </template>
+
         <template v-else>
           <router-link to="/login" class="nav-btn ghost">登录</router-link>
           <router-link to="/login?mode=register" class="nav-btn primary">注册</router-link>
@@ -70,22 +111,17 @@
       </div>
     </nav>
 
-    <!-- Content -->
-    <main class="main-content">
-      <router-view v-slot="{ Component }">
-        <Transition name="page-fade" mode="out-in">
-          <component :is="Component" />
-        </Transition>
-      </router-view>
+    <main class="main-content" :class="{ compact: isDetailRoute }">
+      <router-view :key="route.fullPath" />
     </main>
 
-    <!-- FAB -->
     <button
-      v-if="authStore.isLoggedIn && authStore.isVerified"
+      v-if="showFabButton"
       class="fab"
       :class="{ hidden: !showFab }"
-      @click="$router.push('/create')"
-      title="发帖"
+      type="button"
+      title="发布一个新气泡"
+      @click="router.push('/create')"
     >
       <span class="fab-icon">+</span>
     </button>
@@ -93,48 +129,104 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { messagesApi } from '../api/messages'
+import StarryBackground from '../components/StarryBackground.vue'
+import { useTheme } from '../composables/useTheme'
 import { useAuthStore } from '../stores/auth'
 import { usePostsStore } from '../stores/posts'
-import StarryBackground from '../components/StarryBackground.vue'
+import { getIdentityInitial } from '../utils/presentation'
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 const postsStore = usePostsStore()
+const { themePreference, cycleTheme } = useTheme()
 
-// Avatar
-const avatarEmoji = computed(() => {
-  const nick = authStore.identity?.nickname || '?'
-  // Extract emoji-like character or first char
-  return nick.charAt(0) === '匿' ? '🌟' : nick.charAt(0)
-})
-
-// Nav tabs
 const navTabItems = [
   { label: '发现', value: 'latest' },
   { label: '热门', value: 'hot' },
   { label: '推荐', value: 'recommend' },
 ]
-const activeNavTab = ref('latest')
 
-function switchNavTab(value: string) {
-  activeNavTab.value = value
-  postsStore.setFilter('sort', value)
-  router.push('/')
-}
-
-// Search scroll linkage
+const showUserMenu = ref(false)
 const showNavTabs = ref(true)
 const searchQuery = ref('')
-const unreadCount = ref(0) // TODO: fetch from API
+const showFab = ref(true)
+const unreadNotifications = ref(0)
+const unreadMessages = ref(0)
 
-function doSearch() {
-  const q = searchQuery.value.trim()
-  if (q) {
-    postsStore.setFilter('search', q)
-    router.push('/')
+const isHomeRoute = computed(() => route.name === 'Home')
+const isDetailRoute = computed(() => route.name === 'PostDetail')
+const showCenterSlot = computed(() => isHomeRoute.value)
+const activeNavTab = computed(() => postsStore.filters.sort || 'latest')
+const avatarEmoji = computed(() => getIdentityInitial(authStore.identity?.nickname || '星'))
+const themeIcon = computed(() => {
+  if (themePreference.value === 'light') return '☀️'
+  if (themePreference.value === 'dark') return '🌙'
+  return '🖥️'
+})
+const themeTitle = computed(() => {
+  if (themePreference.value === 'light') return '浅色模式'
+  if (themePreference.value === 'dark') return '深色模式'
+  return '跟随系统'
+})
+const showFabButton = computed(
+  () =>
+    authStore.isLoggedIn &&
+    authStore.isVerified &&
+    route.name !== 'CreatePost' &&
+    route.name !== 'Login',
+)
+
+let heroObserver: IntersectionObserver | null = null
+let lastScrollY = 0
+
+function cleanupHeroObserver() {
+  heroObserver?.disconnect()
+  heroObserver = null
+}
+
+async function setupHeroObserver() {
+  cleanupHeroObserver()
+  if (!isHomeRoute.value) {
+    showNavTabs.value = false
+    return
   }
+
+  await nextTick()
+  const heroSearch = document.getElementById('hero-search')
+  if (!heroSearch) {
+    showNavTabs.value = true
+    return
+  }
+
+  heroObserver = new IntersectionObserver(
+    ([entry]) => {
+      showNavTabs.value = entry.isIntersecting
+    },
+    {
+      rootMargin: '-72px 0px 0px 0px',
+      threshold: 0.12,
+    },
+  )
+  heroObserver.observe(heroSearch)
+}
+
+function switchNavTab(value: string) {
+  if (route.name !== 'Home') {
+    router.push({ name: 'Home' })
+  }
+  postsStore.setFilter('sort', value)
+}
+
+function submitSearch() {
+  const query = searchQuery.value.trim()
+  if (route.name !== 'Home') {
+    router.push({ name: 'Home' })
+  }
+  postsStore.setFilter('search', query || undefined)
 }
 
 function clearSearch() {
@@ -142,158 +234,172 @@ function clearSearch() {
   postsStore.setFilter('search', undefined)
 }
 
-// IntersectionObserver for hero search visibility
-let heroObserver: IntersectionObserver | null = null
-
-function setupHeroObserver() {
-  const heroSearch = document.getElementById('hero-search')
-  if (!heroSearch) {
-    showNavTabs.value = true
-    return
-  }
-  heroObserver = new IntersectionObserver(
-    ([entry]) => {
-      showNavTabs.value = entry.isIntersecting
-    },
-    { threshold: 0 }
-  )
-  heroObserver.observe(heroSearch)
-}
-
-// User menu
-const showUserMenu = ref(false)
-
 function handleLogout() {
   showUserMenu.value = false
   authStore.logout()
   router.push('/login')
 }
 
-// FAB scroll hide/show
-const showFab = ref(true)
-let lastScrollY = 0
+function goBack() {
+  if (window.history.length > 1) {
+    router.back()
+    return
+  }
+  router.push('/')
+}
 
 function onScroll() {
   const currentY = window.scrollY
-  showFab.value = currentY < lastScrollY || currentY < 100
+  showFab.value = currentY < lastScrollY || currentY < 120
   lastScrollY = currentY
 }
 
+async function loadUnreadCounts() {
+  if (!authStore.isLoggedIn) {
+    unreadNotifications.value = 0
+    unreadMessages.value = 0
+    return
+  }
+  try {
+    const [conversationRes, notificationRes] = await Promise.all([
+      messagesApi.getConversations(),
+      messagesApi.getNotifications(),
+    ])
+    unreadMessages.value = conversationRes.data.data.message_unread_count || 0
+    unreadNotifications.value = (notificationRes.data.data || []).filter((item: any) => !item.is_read).length
+  } catch {
+    unreadNotifications.value = 0
+    unreadMessages.value = 0
+  }
+}
+
+watch(
+  () => route.fullPath,
+  async () => {
+    searchQuery.value = postsStore.filters.search || ''
+    await loadUnreadCounts()
+    await setupHeroObserver()
+  },
+  { immediate: true },
+)
+
+watch(
+  () => postsStore.filters.search,
+  (value) => {
+    searchQuery.value = value || ''
+  },
+  { immediate: true },
+)
+
 onMounted(() => {
   window.addEventListener('scroll', onScroll, { passive: true })
-  // Delay observer setup to wait for Home page render
-  setTimeout(setupHeroObserver, 300)
+  loadUnreadCounts()
 })
 
 onUnmounted(() => {
   window.removeEventListener('scroll', onScroll)
-  heroObserver?.disconnect()
-})
-
-// Re-setup observer on route change
-router.afterEach(() => {
-  heroObserver?.disconnect()
-  setTimeout(setupHeroObserver, 300)
+  cleanupHeroObserver()
 })
 </script>
 
 <style scoped>
 .layout {
-  min-height: 100vh;
   position: relative;
+  min-height: 100vh;
 }
 
-/* ===== Navbar ===== */
 .navbar {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
+  inset: 0 0 auto;
   z-index: 100;
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) auto minmax(220px, 1fr);
   align-items: center;
-  height: var(--nav-height);
-  padding: 0 32px;
-  background: var(--nav-bg);
-  backdrop-filter: blur(24px) saturate(1.5);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   gap: 24px;
+  height: var(--nav-height);
+  padding: 0 36px;
+  background: var(--nav-bg);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(24px) saturate(1.5);
+  -webkit-backdrop-filter: blur(24px) saturate(1.5);
 }
 
-/* Logo */
-.logo {
+.nav-left,
+.nav-right {
   display: flex;
   align-items: center;
-  gap: 8px;
-  text-decoration: none;
-  flex-shrink: 0;
-  transition: transform 0.2s ease;
+  gap: 12px;
 }
 
-.logo:hover { transform: scale(1.02); }
-.logo-icon { font-size: 24px; }
+.nav-right {
+  justify-content: flex-end;
+}
+
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-icon {
+  font-size: 1.4rem;
+}
 
 .logo-text {
-  font-size: 18px;
+  font-size: 1.125rem;
   font-weight: 700;
-  background: linear-gradient(135deg, var(--brand), var(--pink));
+  background: var(--gradient-brand);
   -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
   background-clip: text;
+  color: transparent;
 }
 
-/* Nav Center: Tabs / Search */
 .nav-center {
-  flex: 1;
+  min-width: 300px;
   display: flex;
   justify-content: center;
-  max-width: 400px;
-  margin: 0 auto;
 }
 
 .nav-tabs {
-  display: flex;
+  display: inline-flex;
   gap: 4px;
-  background: rgba(255, 255, 255, 0.06);
-  border-radius: var(--radius-pill);
   padding: 4px;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .nav-tab {
-  padding: 6px 20px;
+  min-width: 72px;
+  padding: 8px 18px;
+  border: 0;
   border-radius: var(--radius-pill);
-  border: none;
   background: transparent;
   color: var(--text-2);
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
 }
 
 .nav-tab:hover {
   color: var(--text-1);
-  transform: none;
 }
 
 .nav-tab.active {
-  background: var(--brand);
   color: #fff;
-  transform: none;
+  background: var(--brand);
+  box-shadow: 0 10px 20px rgba(124, 92, 252, 0.18);
 }
 
-/* Nav Search */
 .nav-search {
+  width: min(420px, 100%);
   display: flex;
   align-items: center;
-  gap: 8px;
-  width: 100%;
-  height: 38px;
+  gap: 10px;
+  height: 40px;
   padding: 0 14px;
+  border-radius: var(--radius-pill);
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: var(--radius-pill);
-  transition: all 0.3s ease;
 }
 
 .nav-search:focus-within {
@@ -301,93 +407,98 @@ router.afterEach(() => {
   box-shadow: 0 0 0 4px rgba(124, 92, 252, 0.25);
 }
 
-.search-icon { font-size: 14px; flex-shrink: 0; opacity: 0.5; }
+.search-icon {
+  font-size: 0.875rem;
+  opacity: 0.7;
+}
 
 .nav-search input {
-  flex: 1;
-  border: none;
-  background: transparent;
-  font-size: 14px;
-  color: var(--text-1);
+  width: 100%;
+  border: 0;
   outline: none;
+  background: transparent;
+  color: var(--text-1);
 }
 
-.nav-search input::placeholder { color: var(--text-3); }
+.nav-search input::placeholder {
+  color: var(--text-3);
+}
 
-.search-clear {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  border: none;
-  background: rgba(255, 255, 255, 0.1);
+.search-clear,
+.icon-shell,
+.avatar-btn {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
   color: var(--text-2);
-  font-size: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  flex-shrink: 0;
 }
 
-.search-clear:hover { background: rgba(255, 255, 255, 0.2); transform: none; }
-
-/* Fade transition for tabs/search switch */
-.fade-enter-active,
-.fade-leave-active { transition: opacity 0.3s ease; }
-.fade-enter-from,
-.fade-leave-to { opacity: 0; }
-
-/* Nav Right */
-.nav-right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-shrink: 0;
-}
-
-.nav-icon-btn {
-  position: relative;
+.search-clear,
+.icon-shell {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid var(--border);
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
-  text-decoration: none;
-  transition: all 0.2s;
 }
 
-.nav-icon-btn:hover {
+.search-clear {
+  width: 24px;
+  height: 24px;
+  border: 0;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.search-clear:hover,
+.icon-shell:hover {
+  color: var(--text-1);
+  border-color: var(--border-hover);
   background: rgba(255, 255, 255, 0.1);
 }
 
-.badge {
+.icon-shell {
+  position: relative;
+}
+
+.dot {
   position: absolute;
-  top: -4px;
-  right: -4px;
-  min-width: 16px;
-  height: 16px;
-  border-radius: 8px;
+  top: 7px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
   background: var(--pink);
+  box-shadow: 0 0 0 4px rgba(255, 107, 157, 0.12);
+}
+
+.dot.secondary {
+  background: var(--cyan);
+  box-shadow: 0 0 0 4px rgba(6, 214, 160, 0.12);
+}
+
+.avatar-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--gradient-brand);
   color: #fff;
-  font-size: 10px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 4px;
+  font-weight: 600;
+}
+
+.avatar-btn:hover {
+  transform: scale(1.06);
+  box-shadow: 0 0 0 4px rgba(124, 92, 252, 0.16);
 }
 
 .nav-btn {
-  padding: 8px 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 0 18px;
   border-radius: var(--radius-pill);
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 600;
-  text-decoration: none;
-  transition: all 0.2s ease;
 }
 
 .nav-btn.ghost {
@@ -400,72 +511,47 @@ router.afterEach(() => {
 }
 
 .nav-btn.primary {
-  background: var(--brand);
-  color: white;
+  color: #fff;
+  background: var(--gradient-brand);
+  box-shadow: 0 8px 20px rgba(124, 92, 252, 0.18);
 }
 
 .nav-btn.primary:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(124, 92, 252, 0.3);
-  color: white;
 }
 
-/* User Menu */
-.user-menu { position: relative; }
-
-.avatar-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--brand), var(--pink));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.avatar-btn:hover {
-  transform: scale(1.08);
-  box-shadow: 0 0 0 3px rgba(124, 92, 252, 0.2);
+.user-menu {
+  position: relative;
 }
 
 .dropdown-menu {
   position: absolute;
-  top: calc(100% + 8px);
+  top: calc(100% + 10px);
   right: 0;
   min-width: 180px;
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
   padding: 8px;
-  z-index: 200;
-  backdrop-filter: blur(20px);
+  border-radius: 18px;
+  background: rgba(18, 21, 42, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: var(--shadow-floating);
+  backdrop-filter: blur(24px);
 }
 
 .dropdown-item {
+  width: 100%;
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 14px;
-  border-radius: 10px;
-  font-size: 14px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
   color: var(--text-1);
-  text-decoration: none;
-  cursor: pointer;
-  border: none;
-  background: none;
-  width: 100%;
-  transition: background 0.15s ease;
 }
 
 .dropdown-item:hover {
-  background: rgba(255, 255, 255, 0.06);
   color: var(--brand);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .dropdown-item.logout:hover {
@@ -475,53 +561,34 @@ router.afterEach(() => {
 
 .dropdown-divider {
   height: 1px;
+  margin: 6px 8px;
   background: var(--divider);
-  margin: 4px 8px;
 }
 
-.dropdown-enter-active { transition: all 0.2s ease; }
-.dropdown-leave-active { transition: all 0.15s ease; }
-.dropdown-enter-from,
-.dropdown-leave-to {
-  opacity: 0;
-  transform: translateY(-8px) scale(0.95);
-}
-
-/* ===== Main Content ===== */
 .main-content {
   position: relative;
   z-index: 1;
-  max-width: 1400px;
+  width: min(var(--page-max-width), 100%);
   margin: 0 auto;
-  padding: 24px 48px;
-  padding-top: calc(var(--nav-height) + 24px);
+  padding: calc(var(--nav-height) + 24px) 48px 64px;
 }
 
-/* ===== FAB ===== */
+.main-content.compact {
+  width: min(1040px, 100%);
+}
+
 .fab {
   position: fixed;
   right: 32px;
   bottom: 32px;
+  z-index: 99;
   width: 56px;
   height: 56px;
+  border: 0;
   border-radius: 50%;
-  border: none;
-  background: linear-gradient(135deg, var(--brand), var(--pink));
-  color: white;
-  font-size: 28px;
-  cursor: pointer;
+  background: var(--gradient-brand);
+  color: #fff;
   box-shadow: 0 6px 32px rgba(124, 92, 252, 0.25);
-  z-index: 99;
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.fab-icon {
-  display: block;
-  transition: transform 0.3s ease;
-  line-height: 1;
 }
 
 .fab:hover {
@@ -529,30 +596,87 @@ router.afterEach(() => {
   box-shadow: 0 0 60px rgba(124, 92, 252, 0.25);
 }
 
-.fab:hover .fab-icon { transform: rotate(90deg); }
-.fab:active { transform: scale(0.95); }
-
 .fab.hidden {
-  transform: translateY(100px);
   opacity: 0;
   pointer-events: none;
+  transform: translateY(96px);
 }
 
-/* ===== Page Transition ===== */
-.page-fade-enter-active { transition: opacity 0.2s ease, transform 0.2s ease; }
-.page-fade-leave-active { transition: opacity 0.15s ease; }
-.page-fade-enter-from { opacity: 0; transform: translateY(8px); }
-.page-fade-leave-to { opacity: 0; }
+.fab-icon {
+  display: inline-block;
+  font-size: 1.8rem;
+  line-height: 1;
+}
 
-/* ===== Responsive ===== */
+.fade-enter-active,
+.fade-leave-active,
+.dropdown-enter-active,
+.dropdown-leave-active,
+.page-fade-enter-active,
+.page-fade-leave-active {
+  transition: all 0.24s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to,
+.page-fade-enter-from,
+.page-fade-leave-to,
+.dropdown-enter-from,
+.dropdown-leave-to {
+  opacity: 0;
+}
+
+.page-fade-enter-from {
+  transform: translateY(8px);
+}
+
+.dropdown-enter-from,
+.dropdown-leave-to {
+  transform: translateY(-8px) scale(0.96);
+}
+
 @media (max-width: 900px) {
-  .navbar { padding: 0 24px; }
-  .main-content { padding: 24px 24px; padding-top: calc(var(--nav-height) + 24px); }
+  .navbar {
+    grid-template-columns: auto 1fr auto;
+    gap: 16px;
+    padding: 0 22px;
+  }
+
+  .nav-center {
+    min-width: 0;
+  }
+
+  .main-content {
+    padding: calc(var(--nav-height) + 20px) 24px 56px;
+  }
 }
 
 @media (max-width: 600px) {
-  .nav-center { display: none; }
-  .main-content { padding: 16px; padding-top: calc(var(--nav-height) + 16px); }
-  .nav-btn.ghost { display: none; }
+  .navbar {
+    padding: 0 16px;
+    grid-template-columns: auto 1fr auto;
+  }
+
+  .nav-center {
+    display: none;
+  }
+
+  .logo-text {
+    font-size: 1rem;
+  }
+
+  .nav-btn.ghost {
+    display: none;
+  }
+
+  .main-content {
+    padding: calc(var(--nav-height) + 16px) 16px 48px;
+  }
+
+  .fab {
+    right: 18px;
+    bottom: 18px;
+  }
+
 }
 </style>

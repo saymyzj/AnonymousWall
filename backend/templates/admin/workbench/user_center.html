@@ -1,0 +1,68 @@
+{% extends "admin/workbench/_base.html" %}
+
+{% block wb_body %}
+<section class="wb-grid three">
+  <div class="wb-card">
+    <h2>待认证用户</h2>
+    <p>未通过实名验证的账号。</p>
+    <div class="wb-link-list">
+      {% for user in pending_users %}
+        <a class="wb-link-item" href="/admin/workbench/users/{{ user.id }}/">
+          <div class="wb-link-top"><span>{{ user.email }}</span><span class="wb-badge warn">待认证</span></div>
+          <div class="wb-link-meta">{{ user.real_name }} | {{ user.student_id }}</div>
+        </a>
+      {% empty %}
+        <div class="wb-empty">当前没有待认证用户。</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="wb-card">
+    <h2>禁言中用户</h2>
+    <p>当前处罚中的账号。</p>
+    <div class="wb-link-list">
+      {% for user in banned_users %}
+        <a class="wb-link-item" href="/admin/workbench/users/{{ user.id }}/">
+          <div class="wb-link-top"><span>{{ user.email }}</span><span class="wb-badge danger">禁言中</span></div>
+          <div class="wb-link-meta">截至: {{ user.ban_until|default:"永久禁言" }}</div>
+        </a>
+      {% empty %}
+        <div class="wb-empty">当前没有禁言用户。</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="wb-card">
+    <h2>高风险用户</h2>
+    <p>有违规记录的用户。</p>
+    <div class="wb-link-list">
+      {% for user in risky_users %}
+        <a class="wb-link-item" href="/admin/workbench/users/{{ user.id }}/">
+          <div class="wb-link-top"><span>{{ user.email }}</span><span class="wb-badge danger">{{ user.post_violations|add:user.comment_violations }} 次违规</span></div>
+          <div class="wb-link-meta">帖子违规 {{ user.post_violations }} | 评论违规 {{ user.comment_violations }}</div>
+        </a>
+      {% empty %}
+        <div class="wb-empty">当前没有违规用户。</div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="wb-card">
+  <h2>正常用户</h2>
+  <p>无违规记录的账号。</p>
+  <div class="wb-link-list">
+    {% for user in normal_users %}
+      <a class="wb-link-item" href="/admin/workbench/users/{{ user.id }}/">
+        <div class="wb-link-top">
+          <span>{{ user.email }}</span>
+          <span class="wb-badge {% if not user.is_verified %}warn{% else %}success{% endif %}">{{ user.is_verified|yesno:"已认证,待认证" }}</span>
+        </div>
+        <div class="wb-link-meta">发帖 {{ user.post_count }} | 评论 {{ user.comment_count }}</div>
+      </a>
+    {% empty %}
+      <div class="wb-empty">当前没有可展示的正常用户。</div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

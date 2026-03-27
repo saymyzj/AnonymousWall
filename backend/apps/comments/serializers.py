@@ -14,13 +14,14 @@ class CommentSerializer(serializers.ModelSerializer):
     parent_label = serializers.SerializerMethodField()
 
     is_liked = serializers.SerializerMethodField()
+    moderation_label = serializers.SerializerMethodField()
 
     class Meta:
         model = Comment
         fields = [
             'id', 'post', 'parent', 'content', 'like_count', 'created_at',
             'anon_label', 'anon_color', 'is_author', 'is_post_author', 'parent_label',
-            'is_liked',
+            'is_liked', 'status', 'moderation_reason', 'moderation_source', 'risk_level', 'review_deadline', 'moderation_label',
         ]
 
     def _get_user_map(self):
@@ -66,6 +67,21 @@ class CommentSerializer(serializers.ModelSerializer):
                 user=request.user, target_type='comment', target_id=obj.id
             ).exists()
         return False
+
+    def get_moderation_label(self, obj):
+        if obj.status == 'rejected':
+            return f'违规：{obj.moderation_reason or obj.ai_reason or "内容不符合社区规范"}'
+        if obj.status == 'ai_suspect':
+            risk_map = {
+                'high': '高风险待复核',
+                'medium': '中风险待复核',
+                'low': '低风险待复核',
+                'none': '待复核',
+            }
+            return risk_map.get(obj.risk_level, '待复核')
+        if obj.status == 'pending':
+            return '待人工审核'
+        return ''
 
 
 class CreateCommentSerializer(serializers.Serializer):

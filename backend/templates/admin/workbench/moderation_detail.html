@@ -1,0 +1,93 @@
+{% extends "admin/workbench/_base.html" %}
+
+{% block wb_body %}
+<section class="wb-metrics">
+  <div class="wb-metric"><div class="wb-metric-label">待处理举报</div><div class="wb-metric-value">{{ pending_reports_count }}</div></div>
+  <div class="wb-metric warn"><div class="wb-metric-label">风险等级</div><div class="wb-metric-value">{{ target.risk_level }}</div></div>
+  <div class="wb-metric danger"><div class="wb-metric-label">作者违规帖子</div><div class="wb-metric-value">{{ author_stats.rejected_post_count }}</div></div>
+  <div class="wb-metric danger"><div class="wb-metric-label">作者违规评论</div><div class="wb-metric-value">{{ author_stats.rejected_comment_count }}</div></div>
+</section>
+
+<section class="wb-split">
+  <div class="wb-card">
+    <h2>内容与审核信息</h2>
+    <p>{{ target_type|upper }} #{{ target.id }} | 状态: {{ target.get_status_display }} | 作者: {{ author.email }}</p>
+    <div class="wb-table-list">
+      <div class="wb-table-row">
+        <div class="wb-table-content" style="font-size:14px; line-height:1.8;">{{ content_text }}</div>
+        <div class="wb-table-meta">AI: {{ target.ai_decision }} | AI 原因: {{ target.ai_reason|default:"无" }} | 审核来源: {{ target.moderation_source }} | 截止: {{ target.review_deadline|default:"无" }}</div>
+        <div class="wb-actions">
+          <a class="wb-action ghost" href="{{ raw_link }}">原始表单</a>
+          <a class="wb-action ghost" href="{{ user_link }}">用户详情</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="wb-card">
+    <h2>管理员操作</h2>
+    <p>选择最终决策动作。</p>
+    <form method="post" style="display:flex; flex-direction:column; gap:12px; margin-top:12px;">
+      {% csrf_token %}
+      <div class="wb-filter-field">
+        <label>审核原因</label>
+        <textarea name="reason" placeholder="补充审核原因（可选）"></textarea>
+      </div>
+      <div class="wb-actions" style="flex-wrap:wrap;">
+        <button class="wb-action success" type="submit" name="action" value="approve">通过内容</button>
+        <button class="wb-action danger" type="submit" name="action" value="reject">下架内容</button>
+        <button class="wb-action warn" type="submit" name="action" value="ban_7">下架 + 禁言 7 天</button>
+        <button class="wb-action warn" type="submit" name="action" value="ban_30">下架 + 禁言 30 天</button>
+        <button class="wb-action" type="submit" name="action" value="ban_forever">下架 + 永久禁言</button>
+        <button class="wb-action ghost" type="submit" name="action" value="ignore_all_reports">忽略全部举报</button>
+      </div>
+    </form>
+  </div>
+</section>
+
+{% if reports %}
+<section class="wb-card">
+  <h2>举报记录</h2>
+  <p>该内容相关的所有举报。</p>
+  <div class="wb-table-list">
+    {% for report in reports %}
+      <div class="wb-table-row">
+        <div class="wb-table-top">
+          <span>举报 #{{ report.id }} | {{ report.user.email }}</span>
+          <span class="wb-badge {% if report.status == 'pending' %}danger{% else %}success{% endif %}">{{ report.get_status_display }}</span>
+        </div>
+        <div class="wb-table-content">{{ report.reason }} | {{ report.detail|default:"无补充说明" }}</div>
+        {% if report.status == 'pending' %}
+          <div class="wb-actions">
+            <form method="post" style="display:inline;">
+              {% csrf_token %}
+              <input type="hidden" name="report_id" value="{{ report.id }}" />
+              <button class="wb-action ghost" type="submit" name="action" value="ignore_report">忽略该举报</button>
+            </form>
+          </div>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% if audits %}
+<section class="wb-card">
+  <h2>审核留痕</h2>
+  <p>历史操作记录。</p>
+  <div class="wb-table-list">
+    {% for audit in audits %}
+      <div class="wb-table-row">
+        <div class="wb-table-top">
+          <span>{{ audit.get_action_display }}</span>
+          <span class="wb-badge">{{ audit.auditor|default:"系统" }}</span>
+        </div>
+        <div class="wb-table-content">{{ audit.reason }}</div>
+        <div class="wb-table-meta">{{ audit.created_at|date:"Y-m-d H:i" }}</div>
+      </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+{% endblock %}

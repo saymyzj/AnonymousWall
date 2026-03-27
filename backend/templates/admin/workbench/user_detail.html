@@ -1,0 +1,77 @@
+{% extends "admin/workbench/_base.html" %}
+
+{% block wb_body %}
+<section class="wb-metrics">
+  <div class="wb-metric"><div class="wb-metric-label">发帖数</div><div class="wb-metric-value">{{ stats.post_count }}</div></div>
+  <div class="wb-metric"><div class="wb-metric-label">评论数</div><div class="wb-metric-value">{{ stats.comment_count }}</div></div>
+  <div class="wb-metric danger"><div class="wb-metric-label">违规帖子</div><div class="wb-metric-value">{{ stats.rejected_post_count }}</div></div>
+  <div class="wb-metric warn"><div class="wb-metric-label">违规评论</div><div class="wb-metric-value">{{ stats.rejected_comment_count }}</div></div>
+</section>
+
+<section class="wb-card">
+  <h2>用户档案</h2>
+  <p>{{ user.email }} | {{ user.real_name|default:"未填写姓名" }} | {{ user.student_id|default:"未填写学号/工号" }}</p>
+  <div class="wb-actions">
+    <a class="wb-action ghost" href="/admin/users/user/{{ user.id }}/change/">编辑用户表单</a>
+    <a class="wb-action ghost" href="/admin/interactions/notification/?user__id__exact={{ user.id }}">查看通知记录</a>
+  </div>
+</section>
+
+<section class="wb-split">
+  <div class="wb-card">
+    <h2>最近帖子</h2>
+    <div class="wb-table-list">
+      {% for post in posts %}
+        <div class="wb-table-row">
+          <div class="wb-table-top">
+            <span>帖子 #{{ post.id }}</span>
+            <span class="wb-badge {% if post.status == '已下架' %}danger{% elif post.status == 'AI存疑' %}warn{% endif %}">{{ post.status }}</span>
+          </div>
+          <div class="wb-table-content">{{ post.content }}</div>
+          <div class="wb-table-meta">风险: {{ post.risk_level }} | {{ post.reason }}</div>
+          <div class="wb-actions"><a class="wb-action ghost" href="{{ post.link }}">查看</a></div>
+        </div>
+      {% empty %}
+        <div class="wb-empty">暂无帖子记录。</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="wb-card">
+    <h2>最近评论</h2>
+    <div class="wb-table-list">
+      {% for comment in comments %}
+        <div class="wb-table-row">
+          <div class="wb-table-top">
+            <span>评论 #{{ comment.id }}</span>
+            <span class="wb-badge {% if comment.status == '已下架' %}danger{% elif comment.status == 'AI存疑' %}warn{% endif %}">{{ comment.status }}</span>
+          </div>
+          <div class="wb-table-content">{{ comment.content }}</div>
+          <div class="wb-table-meta">风险: {{ comment.risk_level }} | {{ comment.reason }}</div>
+          <div class="wb-actions"><a class="wb-action ghost" href="{{ comment.link }}">查看</a></div>
+        </div>
+      {% empty %}
+        <div class="wb-empty">暂无评论记录。</div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+{% if notifications %}
+<section class="wb-card">
+  <h2>最近通知</h2>
+  <div class="wb-table-list">
+    {% for item in notifications %}
+      <div class="wb-table-row">
+        <div class="wb-table-top">
+          <span>{{ item.title }}</span>
+          <span class="wb-badge">{{ item.get_type_display }}</span>
+        </div>
+        <div class="wb-table-content">{{ item.content }}</div>
+        <div class="wb-table-meta">{{ item.created_at|date:"Y-m-d H:i" }}</div>
+      </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+{% endblock %}

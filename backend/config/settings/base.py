@@ -1,7 +1,23 @@
+import os
 from pathlib import Path
 from datetime import timedelta
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
+
+
+def load_local_env(*paths):
+    for env_path in paths:
+        if not env_path.exists():
+            continue
+        for raw_line in env_path.read_text(encoding='utf-8').splitlines():
+            line = raw_line.strip()
+            if not line or line.startswith('#') or '=' not in line:
+                continue
+            key, value = line.split('=', 1)
+            os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
+
+
+load_local_env(BASE_DIR / '.env', BASE_DIR / '.env.local')
 
 SECRET_KEY = 'django-insecure-kai)w!52_qk9p!)(6@3v5xm-21dxwg)d=vtz9met%r&-h66g#k'
 
@@ -43,7 +59,7 @@ ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -71,6 +87,8 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = 'static/'
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # DRF
@@ -104,6 +122,51 @@ CORS_ALLOWED_ORIGINS = [
     'http://127.0.0.1:5173',
 ]
 
+# DeepSeek / AI moderation
+DEEPSEEK_API_KEY = os.environ.get('DEEPSEEK_API_KEY', '')
+DEEPSEEK_MODEL = os.environ.get('DEEPSEEK_MODEL', 'deepseek-chat')
+DEEPSEEK_BASE_URL = os.environ.get('DEEPSEEK_BASE_URL', 'https://api.deepseek.com')
+DEEPSEEK_TIMEOUT = int(os.environ.get('DEEPSEEK_TIMEOUT', '25'))
+
 # SimpleUI
 SIMPLEUI_HOME_INFO = False
 SIMPLEUI_ANALYSIS = False
+SIMPLEUI_HOME_PAGE = '/admin/workbench/dashboard/'
+SIMPLEUI_HOME_TITLE = '仪表盘'
+SIMPLEUI_HOME_ICON = 'fas fa-chart-pie'
+SIMPLEUI_CONFIG = {
+    'system_keep': False,
+    'dynamic': False,
+    'menus': [
+        {
+            'name': '内容管理',
+            'icon': 'fas fa-layer-group',
+            'url': '/admin/workbench/content/',
+        },
+        {
+            'name': '审核队列',
+            'icon': 'fas fa-shield-alt',
+            'url': '/admin/workbench/review-queue/',
+        },
+        {
+            'name': '举报管理',
+            'icon': 'fas fa-flag',
+            'url': '/admin/workbench/reports/',
+        },
+        {
+            'name': '用户管理',
+            'icon': 'fas fa-users',
+            'url': '/admin/workbench/users/',
+        },
+        {
+            'name': '推荐系统',
+            'icon': 'fas fa-wave-square',
+            'url': '/admin/workbench/recommendation/',
+        },
+        {
+            'name': '运营配置',
+            'icon': 'fas fa-sliders-h',
+            'url': '/admin/workbench/operations/',
+        },
+    ],
+}

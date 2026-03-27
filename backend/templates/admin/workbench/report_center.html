@@ -1,0 +1,53 @@
+{% extends "admin/workbench/_base.html" %}
+
+{% block wb_body %}
+<section class="wb-metrics">
+  <div class="wb-metric warn"><div class="wb-metric-label">待处理举报</div><div class="wb-metric-value">{{ metrics.pending_reports_count }}</div></div>
+  <div class="wb-metric danger"><div class="wb-metric-label">待审核内容</div><div class="wb-metric-value">{{ metrics.pending_content_count }}</div></div>
+</section>
+
+<section class="wb-split">
+  <div class="wb-card">
+    <h2>举报工作台</h2>
+    <p>举报原因、目标内容、作者、处理入口。</p>
+    <div class="wb-table-list">
+      {% for row in report_rows %}
+        <div class="wb-table-row">
+          <div class="wb-table-top">
+            <span>{{ row.target_type }} 举报 #{{ row.id }}</span>
+            <span class="wb-badge danger">{{ row.reason }}</span>
+          </div>
+          <div class="wb-table-content">{{ row.target_preview }}</div>
+          <div class="wb-table-meta">举报人: {{ row.reporter }} | 被举报作者: {{ row.author_email }} | {{ row.detail }}</div>
+          <div class="wb-actions">
+            <a class="wb-action" href="{{ row.report_link }}">处理举报</a>
+            {% if row.target_link %}<a class="wb-action ghost" href="{{ row.target_link }}">查看内容</a>{% endif %}
+            {% if row.author_link %}<a class="wb-action ghost" href="{{ row.author_link }}">查看作者</a>{% endif %}
+          </div>
+        </div>
+      {% empty %}
+        <div class="wb-empty">当前没有待处理举报。</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="wb-card">
+    <h2>相邻流程</h2>
+    <p>举报通常关联到审核或用户追踪。</p>
+    <div class="wb-link-list">
+      <a class="wb-link-item" href="/admin/workbench/review-queue/">
+        <div class="wb-link-top"><span>审核队列</span><span class="wb-badge danger">{{ metrics.pending_content_count }}</span></div>
+        <div class="wb-link-meta">快速决策是否下架内容</div>
+      </a>
+      <a class="wb-link-item" href="/admin/workbench/users/">
+        <div class="wb-link-top"><span>用户中心</span><span class="wb-badge">{{ metrics.banned_user_count }}</span></div>
+        <div class="wb-link-meta">处罚前查看用户历史</div>
+      </a>
+      <a class="wb-link-item" href="/admin/interactions/report/">
+        <div class="wb-link-top"><span>原始举报表单</span><span class="wb-badge">Django</span></div>
+        <div class="wb-link-meta">批量管理原始记录时使用</div>
+      </a>
+    </div>
+  </div>
+</section>
+{% endblock %}

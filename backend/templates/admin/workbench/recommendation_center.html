@@ -1,0 +1,75 @@
+{% extends "admin/workbench/_base.html" %}
+
+{% block wb_body %}
+<section class="wb-card">
+  <h2>选择用户</h2>
+  <p>查看不同用户的标签偏好和推荐结果。</p>
+  <form method="get">
+    <div class="wb-filter-grid">
+      <div class="wb-filter-field">
+        <label>用户</label>
+        <select name="user_id">
+          {% for user in users %}
+            <option value="{{ user.id }}" {% if snapshot and snapshot.selected_user and snapshot.selected_user.id == user.id %}selected{% endif %}>{{ user.email }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="wb-filter-field" style="justify-content:flex-end;">
+        <label>&nbsp;</label>
+        <button class="wb-action" type="submit">查看推荐画像</button>
+      </div>
+    </div>
+  </form>
+</section>
+
+{% if snapshot %}
+<section class="wb-split">
+  <div class="wb-card">
+    <h2>推荐公式</h2>
+    <p>当前线上使用规则型打分。</p>
+    <div class="wb-table-list">
+      {% for item in snapshot.formula %}
+        <div class="wb-table-row">
+          <div class="wb-table-content">{{ item }}</div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="wb-card">
+    <h2>标签偏好分</h2>
+    <p>基于点赞、收藏和评论行为计算。</p>
+    <div class="wb-table-list">
+      {% for tag, score in snapshot.tag_scores %}
+        <div class="wb-table-row">
+          <div class="wb-table-top">
+            <span>{{ tag }}</span>
+            <span class="wb-badge">{{ score }}</span>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="wb-card">
+  <h2>推荐结果拆解</h2>
+  <p>排序最高的帖子及得分组成。</p>
+  <div class="wb-table-list">
+    {% for post in snapshot.posts %}
+      <div class="wb-table-row">
+        <div class="wb-table-top">
+          <span>帖子 #{{ post.id }} · {{ post.tag }}</span>
+          <span class="wb-badge warn">总分 {{ post.score }}</span>
+        </div>
+        <div class="wb-table-content">{{ post.content }}</div>
+        <div class="wb-table-meta">标签偏好 {{ post.tag_score }} | 热度 {{ post.hot }} | 时间分 {{ post.time_score }} | 置顶加成 {{ post.pin_bonus }}</div>
+        <div class="wb-actions"><a class="wb-action ghost" href="{{ post.link }}">查看帖子</a></div>
+      </div>
+    {% empty %}
+      <div class="wb-empty">当前没有推荐结果。</div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+{% endblock %}

@@ -1,46 +1,47 @@
 <template>
-  <div class="comment-item">
-    <div class="comment-header">
+  <article class="comment-item">
+    <div class="comment-main">
       <div class="anon-avatar" :style="{ background: comment.anon_color }">
-        {{ comment.anon_label?.charAt(2) || 'A' }}
+        {{ getIdentityInitial(comment.anon_label) }}
       </div>
-      <div class="comment-meta">
-        <div class="meta-top">
-          <span class="anon-name">{{ comment.is_post_author ? '楼主' : comment.anon_label }}</span>
-          <span v-if="comment.is_post_author" class="author-badge">楼主</span>
+
+      <div class="comment-body-wrap">
+        <header class="comment-header">
+          <div class="header-left">
+            <span class="anon-name">{{ comment.is_post_author ? '楼主' : comment.anon_label }}</span>
+            <span v-if="comment.is_post_author" class="author-badge">楼主</span>
+            <span class="comment-time">{{ formatTimeAgo(comment.created_at) }}</span>
+          </div>
+        </header>
+
+        <div class="comment-body">
+          <span v-if="comment.parent_label" class="reply-to">
+            @{{ comment.parent_label }}
+          </span>
+          {{ comment.content }}
         </div>
-        <span class="comment-time">{{ timeAgo(comment.created_at) }}</span>
+
+        <div class="comment-actions">
+          <button class="act-btn" :class="{ active: comment.is_liked }" type="button" @click="$emit('like', comment.id)">
+            {{ comment.is_liked ? '❤️' : '♡' }}
+            <span>{{ comment.like_count }}</span>
+          </button>
+          <button class="act-btn" type="button" @click="$emit('reply', comment)">💬 回复</button>
+          <button class="act-btn" type="button" @click="$emit('report', comment)">⚠️ 举报</button>
+          <button v-if="comment.is_author" class="act-btn danger" type="button" @click="$emit('delete', comment.id)">
+            删除
+          </button>
+        </div>
       </div>
     </div>
-
-    <div class="comment-body">
-      <span v-if="comment.parent_label" class="reply-to">
-        回复 <b>{{ comment.parent_label }}</b>：
-      </span>
-      {{ comment.content }}
-    </div>
-
-    <div class="comment-actions">
-      <button class="act-btn" :class="{ active: comment.is_liked }" @click="$emit('like', comment.id)">
-        {{ comment.is_liked ? '♥' : '♡' }} {{ comment.like_count }}
-      </button>
-      <button class="act-btn" @click="$emit('reply', comment)">↩ 回复</button>
-      <button v-if="comment.is_author" class="act-btn danger" @click="$emit('delete', comment.id)">删除</button>
-    </div>
-  </div>
+  </article>
 </template>
 
 <script setup lang="ts">
-defineProps<{ comment: any }>()
-defineEmits(['reply', 'like', 'delete'])
+import { formatTimeAgo, getIdentityInitial } from '../utils/presentation'
 
-function timeAgo(dateStr: string) {
-  const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000)
-  if (diff < 60) return '刚刚'
-  if (diff < 3600) return `${Math.floor(diff / 60)}分钟前`
-  if (diff < 86400) return `${Math.floor(diff / 3600)}小时前`
-  return `${Math.floor(diff / 86400)}天前`
-}
+defineProps<{ comment: any }>()
+defineEmits(['reply', 'like', 'delete', 'report'])
 </script>
 
 <style scoped>
@@ -51,102 +52,97 @@ function timeAgo(dateStr: string) {
 }
 
 .comment-item:last-child {
-  border-bottom: none;
   margin-bottom: 0;
   padding-bottom: 0;
+  border-bottom: 0;
 }
 
-.comment-header {
+.comment-main {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 8px;
+  gap: 14px;
 }
 
 .anon-avatar {
   width: 36px;
   height: 36px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: white;
-  font-size: 13px;
-  font-weight: 600;
   flex-shrink: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
-.comment-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+.comment-body-wrap {
   flex: 1;
+  min-width: 0;
 }
 
-.meta-top {
+.comment-header {
+  margin-bottom: 6px;
+}
+
+.header-left {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
 }
 
 .anon-name {
-  font-size: 14px;
-  font-weight: 600;
   color: var(--text-1);
+  font-size: 0.875rem;
+  font-weight: 600;
 }
 
 .author-badge {
-  display: inline-block;
-  padding: 1px 8px;
+  padding: 2px 8px;
   border-radius: var(--radius-pill);
   background: var(--brand);
-  color: white;
-  font-size: 11px;
+  color: #fff;
+  font-size: 0.6875rem;
   font-weight: 700;
-  line-height: 1.6;
 }
 
 .comment-time {
-  font-size: 12px;
   color: var(--text-3);
+  font-size: 0.75rem;
 }
 
 .comment-body {
-  font-size: 15px;
-  line-height: 1.7;
   color: var(--text-1);
-  word-break: break-word;
+  font-size: 0.9375rem;
+  line-height: 1.7;
   white-space: pre-wrap;
-  margin-left: 46px;
+  word-break: break-word;
 }
 
 .reply-to {
+  margin-right: 6px;
   color: var(--brand);
-  font-size: 14px;
   font-weight: 500;
-}
-
-.reply-to b {
-  font-weight: 600;
 }
 
 .comment-actions {
   display: flex;
-  gap: 16px;
-  margin-top: 8px;
-  margin-left: 46px;
+  flex-wrap: wrap;
+  gap: 18px;
+  margin-top: 12px;
 }
 
 .act-btn {
-  background: none;
-  border: none;
-  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: transparent;
   color: var(--text-3);
-  cursor: pointer;
-  padding: 2px 0;
-  transition: all 0.2s ease;
+  font-size: 0.8125rem;
 }
 
 .act-btn:hover {

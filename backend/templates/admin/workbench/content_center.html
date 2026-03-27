@@ -1,0 +1,101 @@
+{% extends "admin/workbench/_base.html" %}
+
+{% block wb_body %}
+<section class="wb-card">
+  <h2>内容视角</h2>
+  <p>选择内容类型，再用状态筛选缩小范围。</p>
+  <div class="wb-tabs" style="margin-top:12px;">
+    <a class="wb-tab {% if kind == 'post' %}active{% endif %}" href="/admin/workbench/content/?kind=post{% if search %}&search={{ search|urlencode }}{% endif %}">帖子视图</a>
+    <a class="wb-tab {% if kind == 'comment' %}active{% endif %}" href="/admin/workbench/content/?kind=comment{% if search %}&search={{ search|urlencode }}{% endif %}">评论视图</a>
+  </div>
+  <div class="wb-tabs" style="margin-top:8px;">
+    {% for group in status_groups %}
+      <a class="wb-tab {% if status == group.value or not status and group.value == 'all' %}active{% endif %}" href="/admin/workbench/content/?kind={{ kind }}{% if group.value != 'all' %}&status={{ group.value }}{% endif %}{% if search %}&search={{ search|urlencode }}{% endif %}">
+        {{ group.label }} <span style="opacity:.7">{{ group.count }}</span>
+      </a>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="wb-card">
+  <h2>筛选条件</h2>
+  <form method="get">
+    <input type="hidden" name="kind" value="{{ kind }}" />
+    <div class="wb-filter-grid">
+      <div class="wb-filter-field">
+        <label>状态</label>
+        <select name="status">
+          <option value="">全部状态</option>
+          <option value="normal" {% if status == 'normal' %}selected{% endif %}>正常</option>
+          <option value="ai_suspect" {% if status == 'ai_suspect' %}selected{% endif %}>AI 存疑</option>
+          <option value="pending" {% if status == 'pending' %}selected{% endif %}>待审核</option>
+          <option value="rejected" {% if status == 'rejected' %}selected{% endif %}>已下架</option>
+        </select>
+      </div>
+      <div class="wb-filter-field">
+        <label>关键词</label>
+        <input name="search" value="{{ search }}" placeholder="搜索内容关键词" />
+      </div>
+      <div class="wb-filter-field" style="justify-content:flex-end;">
+        <label>&nbsp;</label>
+        <div class="wb-actions" style="margin-top:0;">
+          <button class="wb-action" type="submit">应用筛选</button>
+          <a class="wb-action ghost" href="/admin/workbench/content/?kind={{ kind }}">清空</a>
+        </div>
+      </div>
+    </div>
+  </form>
+</section>
+
+<section class="wb-split">
+  <div class="wb-card">
+    <h2>{% if kind == 'post' %}帖子结果{% else %}评论结果{% endif %}</h2>
+    <p>{% if status %}已筛选结果{% else %}最新内容{% endif %}</p>
+    <div class="wb-table-list">
+      {% for item in items %}
+        <div class="wb-table-row">
+          <div class="wb-table-top">
+            <span>{{ item.title }}</span>
+            <span class="wb-badge {% if item.status_code == 'rejected' %}danger{% elif item.status_code == 'ai_suspect' %}warn{% endif %}">{{ item.status }}</span>
+          </div>
+          <div class="wb-table-content">{{ item.content }}</div>
+          <div class="wb-table-meta">{{ item.meta }}</div>
+          <div class="wb-table-meta">AI: {{ item.ai_decision }} | {{ item.ai_reason }} | 举报: {{ item.report_count }}</div>
+          <div class="wb-actions">
+            <a class="wb-action" href="{{ item.target_link }}">审核详情</a>
+            <a class="wb-action ghost" href="{{ item.raw_link }}">原始表单</a>
+          </div>
+        </div>
+      {% empty %}
+        <div class="wb-empty">当前筛选条件下没有内容。</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div style="display:flex; flex-direction:column; gap:16px;">
+    <div class="wb-card">
+      <h2>{% if kind == 'post' %}帖子{% else %}评论{% endif %}快捷入口</h2>
+      <div class="wb-link-list">
+        {% for item in primary_links %}
+          <a class="wb-link-item" href="{{ item.url }}">
+            <div class="wb-link-top"><span>{{ item.label }}</span></div>
+            <div class="wb-link-meta">{{ item.value }}</div>
+          </a>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="wb-card">
+      <h2>跨流程跳转</h2>
+      <div class="wb-link-list">
+        {% for item in secondary_links %}
+          <a class="wb-link-item" href="{{ item.url }}">
+            <div class="wb-link-top"><span>{{ item.label }}</span><span class="wb-badge warn">跳转</span></div>
+            <div class="wb-link-meta">{{ item.value }}</div>
+          </a>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

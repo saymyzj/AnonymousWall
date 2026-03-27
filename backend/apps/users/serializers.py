@@ -8,7 +8,7 @@ class RegisterSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True, min_length=8)
     student_id = serializers.CharField(max_length=30)
-    real_name = serializers.CharField(max_length=50)
+    real_name = serializers.CharField(max_length=50, required=False, allow_blank=True)
 
     def validate_email(self, value):
         if User.objects.filter(email=value).exists():
@@ -21,6 +21,8 @@ class RegisterSerializer(serializers.Serializer):
         return value
 
     def validate_student_id(self, value):
+        if not value:
+            return ''
         if not re.match(r'^[a-zA-Z0-9]+$', value):
             raise serializers.ValidationError('学号/工号只能包含字母和数字')
         if User.objects.filter(student_id=value).exists():
@@ -32,7 +34,8 @@ class RegisterSerializer(serializers.Serializer):
             email=validated_data['email'],
             password=validated_data['password'],
             student_id=validated_data['student_id'],
-            real_name=validated_data['real_name'],
+            real_name=validated_data.get('real_name', ''),
+            is_verified=False,
         )
         AnonymousIdentity.objects.create(
             user=user,
@@ -53,10 +56,30 @@ class UserInfoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'email', 'student_id', 'is_verified', 'date_joined', 'default_identity']
+        fields = [
+            'id', 'email', 'student_id', 'real_name', 'is_verified', 'is_banned', 'ban_until',
+            'date_joined', 'default_identity', 'theme_preference',
+        ]
 
     def get_default_identity(self, obj):
         identity = obj.identities.order_by('-created_at').first()
         if identity:
             return AnonymousIdentitySerializer(identity).data
         return None
+
+
+class UpdatePreferencesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['theme_preference', 'real_name', 'student_id']
+
+    def validate_student_id(self, value):
+        value = value.strip()
+        if not value:
+            return value
+        if not re.match(r'^[a-zA-Z0-9]+$', value):
+            raise serializers.ValidationError('学号/工号只能包含字母和数字')
+        exists = User.objects.filter(student_id=value).exclude(pk=self.instance.pk).exists()
+        if exists:
+            raise serializers.ValidationError('该学号/工号已被其他账号使用')
+        return value

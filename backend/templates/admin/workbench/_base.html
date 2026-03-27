@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="zh-hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="NONE,NOARCHIVE">
+<title>{{ wb_page_title|default:"工作台" }} — AnonymousWall 管理后台</title>
+{% include "admin/workbench/_styles.html" %}
+</head>
+<body>
+<div class="wb-app">
+  {% include "admin/workbench/_nav.html" %}
+  <div class="wb-main">
+    <div class="wb-shell">
+      {% include "admin/workbench/_page_header.html" %}
+      {% block wb_body %}{% endblock %}
+    </div>
+  </div>
+</div>
+</body>
+</html>
