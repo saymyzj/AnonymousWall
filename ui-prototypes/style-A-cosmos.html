@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Style A — Cosmos Explorer (Dribbble 风格)</title>
+<style>
+  /* ===== RESET ===== */
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  /* ===== TOKENS ===== */
+  :root {
+    --bg: #FAFAFB;
+    --bg-nav: rgba(255,255,255,0.82);
+    --bg-card: #fff;
+    --bg-hero: linear-gradient(135deg, #F0EDFF 0%, #FFF0F5 50%, #E8F4FD 100%);
+    --text-1: #1A1A2E;
+    --text-2: #6B7280;
+    --text-3: #9CA3AF;
+    --brand: #7C5CFC;
+    --brand-light: #EDE9FE;
+    --pink: #FF6B9D;
+    --radius-sm: 12px;
+    --radius-md: 20px;
+    --radius-lg: 28px;
+    --radius-pill: 999px;
+    --shadow-card: 0 2px 12px rgba(0,0,0,0.05);
+    --shadow-hover: 0 12px 40px rgba(124,92,252,0.12);
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Noto Sans SC', sans-serif;
+
+    /* bubble palette */
+    --b1: linear-gradient(135deg, #FFE0EC, #FFC2D4);
+    --b2: linear-gradient(135deg, #FFE0C2, #FFDAA6);
+    --b3: linear-gradient(135deg, #D0F4EA, #B8ECD8);
+    --b4: linear-gradient(135deg, #D6ECFF, #BDE0FE);
+    --b5: linear-gradient(135deg, #E8DEFF, #D4C2FC);
+    --b6: linear-gradient(135deg, #FFF9C4, #FFF176);
+    --b7: linear-gradient(135deg, #F5F5F5, #EEEEEE);
+    --b8: linear-gradient(135deg, #F0E6D8, #E6D5C3);
+  }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text-1);
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  /* ===== NAV ===== */
+  .nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    height: 64px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 48px;
+    background: var(--bg-nav);
+    backdrop-filter: blur(20px) saturate(1.8);
+    -webkit-backdrop-filter: blur(20px) saturate(1.8);
+    border-bottom: 1px solid rgba(0,0,0,0.04);
+    transition: all 0.3s ease;
+  }
+  .nav.scrolled {
+    height: 56px;
+    box-shadow: 0 1px 12px rgba(0,0,0,0.06);
+  }
+  .nav-logo {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 20px; font-weight: 700;
+    color: var(--brand);
+    text-decoration: none;
+  }
+  .nav-logo span { font-size: 22px; }
+  .nav-center {
+    display: flex; align-items: center; gap: 32px;
+  }
+  .nav-link {
+    font-size: 15px; font-weight: 500; color: var(--text-2);
+    text-decoration: none; position: relative; padding: 4px 0;
+    transition: color 0.2s;
+  }
+  .nav-link:hover { color: var(--text-1); }
+  .nav-link::after {
+    content: ''; position: absolute; bottom: -2px; left: 0;
+    width: 0; height: 2px; background: var(--brand);
+    border-radius: 1px; transition: width 0.2s;
+  }
+  .nav-link:hover::after, .nav-link.active::after { width: 100%; }
+  .nav-link.active { color: var(--text-1); }
+  .nav-right {
+    display: flex; align-items: center; gap: 16px;
+  }
+  .nav-search-btn {
+    width: 40px; height: 40px; border-radius: 50%;
+    border: none; background: var(--brand-light);
+    color: var(--brand); font-size: 18px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+  .nav-search-btn:hover { background: var(--brand); color: #fff; }
+  .nav-avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--brand), var(--pink));
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 14px; font-weight: 600; cursor: pointer;
+  }
+  .btn-primary {
+    padding: 8px 20px; border-radius: var(--radius-pill);
+    background: var(--brand); color: #fff;
+    border: none; font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .btn-primary:hover { background: #6B4CE6; transform: translateY(-1px); }
+
+  /* ===== HERO ===== */
+  .hero {
+    margin-top: 64px;
+    padding: 80px 48px 60px;
+    background: var(--bg-hero);
+    position: relative; overflow: hidden;
+    text-align: center;
+  }
+  .hero h1 {
+    font-size: 52px; font-weight: 800;
+    line-height: 1.2; margin-bottom: 16px;
+    background: linear-gradient(135deg, var(--text-1), var(--brand));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .hero p {
+    font-size: 18px; color: var(--text-2);
+    max-width: 520px; margin: 0 auto 36px;
+  }
+  .hero-search {
+    max-width: 560px; margin: 0 auto;
+    display: flex; align-items: center;
+    background: #fff; border-radius: var(--radius-pill);
+    padding: 6px 6px 6px 24px;
+    box-shadow: 0 4px 24px rgba(124,92,252,0.1);
+    border: 2px solid transparent;
+    transition: border-color 0.2s;
+  }
+  .hero-search:focus-within { border-color: var(--brand); }
+  .hero-search input {
+    flex: 1; border: none; outline: none;
+    font-size: 16px; color: var(--text-1);
+    background: transparent;
+  }
+  .hero-search input::placeholder { color: var(--text-3); }
+  .hero-search button {
+    padding: 12px 28px; border-radius: var(--radius-pill);
+    background: var(--brand); color: #fff;
+    border: none; font-size: 15px; font-weight: 600;
+    cursor: pointer; transition: background 0.2s;
+  }
+  .hero-search button:hover { background: #6B4CE6; }
+
+  /* hero floating bubbles */
+  .hero-bubble {
+    position: absolute; border-radius: 50%; opacity: 0.15;
+    pointer-events: none;
+    animation: drift 20s ease-in-out infinite alternate;
+  }
+  .hero-bubble:nth-child(1) { width: 200px; height: 200px; top: -40px; right: 10%; background: var(--brand); animation-duration: 18s; }
+  .hero-bubble:nth-child(2) { width: 140px; height: 140px; bottom: -30px; left: 8%; background: var(--pink); animation-duration: 22s; animation-delay: -5s; }
+  .hero-bubble:nth-child(3) { width: 80px; height: 80px; top: 30%; left: 15%; background: #10B981; animation-duration: 15s; animation-delay: -3s; }
+
+  @keyframes drift {
+    0% { transform: translate(0, 0) scale(1); }
+    100% { transform: translate(30px, -20px) scale(1.08); }
+  }
+
+  /* ===== TRENDING CAROUSEL ===== */
+  .trending {
+    padding: 48px 48px 0;
+  }
+  .section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 24px;
+  }
+  .section-title {
+    font-size: 22px; font-weight: 700;
+  }
+  .section-more {
+    font-size: 14px; color: var(--brand); text-decoration: none; font-weight: 500;
+  }
+  .section-more:hover { text-decoration: underline; }
+  .carousel {
+    display: flex; gap: 20px; overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    padding-bottom: 8px;
+    -ms-overflow-style: none; scrollbar-width: none;
+  }
+  .carousel::-webkit-scrollbar { display: none; }
+  .carousel-item {
+    flex: 0 0 280px; scroll-snap-align: start;
+    border-radius: var(--radius-lg);
+    padding: 28px 24px;
+    color: var(--text-1);
+    position: relative; overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.25s, box-shadow 0.25s;
+  }
+  .carousel-item:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-hover);
+  }
+  .carousel-tag {
+    display: inline-block; padding: 4px 12px;
+    background: rgba(255,255,255,0.6); border-radius: var(--radius-pill);
+    font-size: 12px; font-weight: 600; margin-bottom: 16px;
+    backdrop-filter: blur(4px);
+  }
+  .carousel-text {
+    font-size: 15px; line-height: 1.6;
+    display: -webkit-box; -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical; overflow: hidden;
+    margin-bottom: 20px;
+  }
+  .carousel-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 13px; color: var(--text-2);
+  }
+  .carousel-avatar {
+    width: 24px; height: 24px; border-radius: 50%;
+    background: rgba(255,255,255,0.5); margin-right: 8px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 11px;
+  }
+  .carousel-stats { display: flex; gap: 12px; }
+
+  /* ===== FILTER BAR ===== */
+  .filter-bar {
+    padding: 32px 48px 0;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 16px;
+  }
+  .tags {
+    display: flex; gap: 10px; flex-wrap: wrap;
+  }
+  .tag {
+    padding: 8px 20px; border-radius: var(--radius-pill);
+    border: 1.5px solid #E5E7EB; background: #fff;
+    font-size: 14px; font-weight: 500; color: var(--text-2);
+    cursor: pointer; transition: all 0.2s;
+  }
+  .tag:hover { border-color: var(--brand); color: var(--brand); }
+  .tag.active {
+    background: var(--brand); color: #fff;
+    border-color: var(--brand);
+  }
+  .sort-group {
+    display: flex; gap: 8px; align-items: center;
+  }
+  .sort-btn {
+    padding: 8px 16px; border-radius: var(--radius-pill);
+    border: none; background: transparent;
+    font-size: 14px; color: var(--text-2);
+    cursor: pointer; transition: all 0.2s;
+  }
+  .sort-btn:hover { color: var(--text-1); }
+  .sort-btn.active { background: var(--text-1); color: #fff; }
+
+  /* ===== MASONRY GRID ===== */
+  .grid-section {
+    padding: 28px 48px 80px;
+  }
+  .masonry {
+    columns: 4;
+    column-gap: 24px;
+  }
+
+  /* ===== BUBBLE CARD ===== */
+  .bubble {
+    break-inside: avoid;
+    margin-bottom: 24px;
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    position: relative;
+  }
+  .bubble:hover {
+    transform: translateY(-6px);
+    box-shadow: var(--shadow-hover);
+  }
+  .bubble-header {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 14px;
+  }
+  .bubble-avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: rgba(255,255,255,0.5);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; backdrop-filter: blur(4px);
+  }
+  .bubble-meta { flex: 1; }
+  .bubble-name { font-size: 14px; font-weight: 600; }
+  .bubble-time { font-size: 12px; color: var(--text-2); }
+  .bubble-content {
+    font-size: 15px; line-height: 1.7; margin-bottom: 16px;
+  }
+  .bubble-img {
+    width: 100%; border-radius: var(--radius-md);
+    margin-bottom: 14px; object-fit: cover;
+    background: rgba(255,255,255,0.3);
+    aspect-ratio: 4/3;
+  }
+  .bubble-tag-label {
+    display: inline-block; padding: 3px 10px;
+    background: rgba(255,255,255,0.5); border-radius: var(--radius-pill);
+    font-size: 12px; font-weight: 500; margin-bottom: 12px;
+    backdrop-filter: blur(4px);
+  }
+  .bubble-footer {
+    display: flex; align-items: center; gap: 16px;
+    font-size: 13px; color: var(--text-2);
+  }
+  .bubble-action {
+    display: flex; align-items: center; gap: 4px;
+    cursor: pointer; transition: color 0.2s;
+  }
+  .bubble-action:hover { color: var(--brand); }
+
+  /* ===== FAB ===== */
+  .fab {
+    position: fixed; bottom: 32px; right: 32px;
+    width: 56px; height: 56px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--brand), var(--pink));
+    color: #fff; border: none; font-size: 28px;
+    cursor: pointer; z-index: 99;
+    box-shadow: 0 6px 24px rgba(124,92,252,0.35);
+    transition: transform 0.25s, box-shadow 0.25s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .fab:hover {
+    transform: scale(1.1) translateY(-2px);
+    box-shadow: 0 10px 32px rgba(124,92,252,0.45);
+  }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 1200px) { .masonry { columns: 3; } }
+  @media (max-width: 900px) { .masonry { columns: 2; } .hero h1 { font-size: 36px; } .nav, .hero, .trending, .filter-bar, .grid-section { padding-left: 24px; padding-right: 24px; } }
+  @media (max-width: 600px) { .masonry { columns: 1; } .hero h1 { font-size: 28px; } .carousel-item { flex: 0 0 240px; } }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav" id="nav">
+  <a class="nav-logo" href="#">
+    <span>🫧</span> AnonymousWall
+  </a>
+  <div class="nav-center">
+    <a class="nav-link active" href="#">发现</a>
+    <a class="nav-link" href="#">推荐</a>
+    <a class="nav-link" href="#">热门</a>
+  </div>
+  <div class="nav-right">
+    <button class="nav-search-btn">🔍</button>
+    <button class="btn-primary">发帖</button>
+    <div class="nav-avatar">周</div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bubble"></div>
+  <div class="hero-bubble"></div>
+  <div class="hero-bubble"></div>
+  <h1>匿名的宇宙，真实的声音</h1>
+  <p>在这里，每一个气泡都承载着一份真实的心声。说出你想说的，无需顾虑。</p>
+  <div class="hero-search">
+    <input type="text" placeholder="搜索你感兴趣的话题...">
+    <button>搜索</button>
+  </div>
+</section>
+
+<!-- TRENDING -->
+<section class="trending">
+  <div class="section-header">
+    <h2 class="section-title">🔥 热门气泡</h2>
+    <a class="section-more" href="#">查看更多 →</a>
+  </div>
+  <div class="carousel">
+    <div class="carousel-item" style="background: var(--b1);">
+      <span class="carousel-tag">💌 表白</span>
+      <div class="carousel-text">图书馆三楼靠窗的女生，你每次翻书的样子都很好看，我鼓起勇气写下这条消息...</div>
+      <div class="carousel-footer">
+        <div><span class="carousel-avatar">🐼</span> 匿名熊猫</div>
+        <div class="carousel-stats"><span>❤️ 128</span><span>💬 45</span></div>
+      </div>
+    </div>
+    <div class="carousel-item" style="background: var(--b4);">
+      <span class="carousel-tag">🆘 求助</span>
+      <div class="carousel-text">考研还是就业？大三了好迷茫，有没有过来人给点建议，什么方向比较好啊</div>
+      <div class="carousel-footer">
+        <div><span class="carousel-avatar">🦊</span> 匿名狐狸</div>
+        <div class="carousel-stats"><span>❤️ 86</span><span>💬 92</span></div>
+      </div>
+    </div>
+    <div class="carousel-item" style="background: var(--b3);">
+      <span class="carousel-tag">🕳️ 树洞</span>
+      <div class="carousel-text">其实我一直假装合群，但下课后一个人走在路上的时候才觉得最放松...</div>
+      <div class="carousel-footer">
+        <div><span class="carousel-avatar">🐢</span> 匿名海龟</div>
+        <div class="carousel-stats"><span>❤️ 203</span><span>💬 67</span></div>
+      </div>
+    </div>
+    <div class="carousel-item" style="background: var(--b5);">
+      <span class="carousel-tag">😤 吐槽</span>
+      <div class="carousel-text">食堂阿姨今天手抖得特别厉害，打的饭连猫都嫌少，而且价格又涨了！</div>
+      <div class="carousel-footer">
+        <div><span class="carousel-avatar">🐱</span> 匿名喵星人</div>
+        <div class="carousel-stats"><span>❤️ 156</span><span>💬 78</span></div>
+      </div>
+    </div>
+    <div class="carousel-item" style="background: var(--b2);">
+      <span class="carousel-tag">🤝 搭子</span>
+      <div class="carousel-text">有没有人周末一起去爬山？我一个人去太无聊了，最好带上相机一起拍照</div>
+      <div class="carousel-footer">
+        <div><span class="carousel-avatar">🐻</span> 匿名棕熊</div>
+        <div class="carousel-stats"><span>❤️ 42</span><span>💬 31</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FILTER BAR -->
+<div class="filter-bar">
+  <div class="tags">
+    <span class="tag active">全部</span>
+    <span class="tag">💌 表白</span>
+    <span class="tag">😤 吐槽</span>
+    <span class="tag">🆘 求助</span>
+    <span class="tag">🕳️ 树洞</span>
+    <span class="tag">🔍 失物招领</span>
+    <span class="tag">🤝 搭子</span>
+  </div>
+  <div class="sort-group">
+    <button class="sort-btn active">最新</button>
+    <button class="sort-btn">最热</button>
+    <button class="sort-btn">推荐</button>
+  </div>
+</div>
+
+<!-- MASONRY GRID -->
+<section class="grid-section">
+  <div class="masonry">
+
+    <div class="bubble" style="background: var(--b1);">
+      <div class="bubble-header">
+        <div class="bubble-avatar">🐼</div>
+        <div class="bubble-meta"><div class="bubble-name">匿名熊猫 #3927</div><div class="bubble-time">2 小时前</div></div>
+      </div>
+      <span class="bubble-tag-label">💌 表白</span>
+      <div class="bubble-content">图书馆三楼靠窗的女生，你每次翻书的样子都很好看。我想认识你，但又怕打扰到你的安宁。如果你看到这条消息，能不能给我一个微笑？</div>
+      <div class="bubble-footer">
+        <span class="bubble-action">❤️ 128</span>
+        <span class="bubble-action">💬 45</span>
+        <span class="bubble-action">⭐ 23</span>
+      </div>
+    </div>
+
+    <div class="bubble" style="background: var(--b4);">
+      <div class="bubble-header">
+        <div class="bubble-avatar">🦊</div>
+        <div class="bubble-meta"><div class="bubble-name">匿名狐狸 #1082</div><div class="bubble-time">3 小时前</div></div>
+      </div>
+      <span class="bubble-tag-label">🆘 求助</span>
+      <div class="bubble-content">大三了，考研还是直接就业？计算机专业，绩点3.2，有没有过来人分享下经验？</div>
+      <div class="bubble-footer">
+        <span class="bubble-action">❤️ 86</span>
+        <span class="bubble-action">💬 92</span>
+        <span class="bubble-action">⭐ 15</span>
+      </div>
+    </div>
+
+    <div class="bubble" style="background: var(--b3);">
+      <div class="bubble-header">
+        <div class="bubble-avatar">🐢</div>
+        <div class="bubble-meta"><div class="bubble-name">匿名海龟 #5514</div><div class="bubble-time">4 小时前</div></div>
+      </div>
+      <span class="bubble-tag-label">🕳️ 树洞</span>
+      <div class="bubble-content">其实我一直假装合群。宿舍的人约我出去玩我都会答应，但其实我真正想做的是一个人待着。下课后一个人走在路上的时候才是我最放松的时刻。不知道有没有人和我一样。</div>
+      <div class="bubble-footer">
+        <span class="bubble-action">❤️ 203</span>
+        <span class="bubble-action">💬 67</span>
+        <span class="bubble-action">⭐ 89</span>
+      </div>
+    </div>
+
+    <div class="bubble" style="background: var(--b5);">
+      <div class="bubble-header">
+        <div class="bubble-avatar">🐱</div>
+        <div class="bubble-meta"><div class="bubble-name">匿名喵星人 #7788</div><div class="bubble-time">5 小时前</div></div>
+      </div>
+      <span class="bubble-tag-label">😤 吐槽</span>
+      <div class="bubble-content">食堂阿姨手抖！</div>
+      <div class="bubble-footer">
+        <span class="bubble-action">❤️ 156</span>
+        <span class="bubble-action">💬 78</span>
+        <span class="bubble-action">⭐ 12</span>
+      </div>
+    </div>
+
+    <div class="bubble" style="background: var(--b2);">
+      <div class="bubble-header">
+        <div class="bubble-avatar">🐻</div>
+        <div class="bubble-meta"><div class="bubble-name">匿名棕熊 #2233</div><div class="bubble-time">6 小时前</div></div>
+      </div>
+      <span class="bubble-tag-label">🤝 搭子</span>
+      <div class="bubble-content">有没有人周末一起去爬紫金山？我一个人去太无聊了，最好是喜欢拍照的朋友，可以互相拍！男女都行，纯搭子～</div>
+      <div class="bubble-img" style="background: linear-gradient(135deg, rgba(255,255,255,0.3), rgba(255,224,194,0.5)); height: 160px; display: flex; align-items: center; justify-content: center; color: var(--text-3); font-size: 14px;">📷 图片区域</div>
+      <div class="bubble-footer">
+        <span class="bubble-action">❤️ 42</span>
+        <span class="bubble-action">💬 31</span>
+        <span class="bubble-action">⭐ 8</span>
+      </div>
+    </div>
+
+    <div class="bubble" style="background: var(--b6);">
+      <div class="bubble-header">
+        <div class="bubble-avatar">🐸</div>
+        <div class="bubble-meta"><div class="bubble-name">匿名青蛙 #4456</div><div class="bubble-time">7 小时前</div></div>
+      </div>
+      <span class="bubble-tag-label">🔍 失物招领</span>
+      <div class="bubble-content">在教学楼 B 栋 302 教室捡到一个蓝色保温杯，上面有一个小熊贴纸。失主请联系！</div>
+      <div class="bubble-footer">
+        <span class="bubble-action">❤️ 5</span>
+        <span class="bubble-action">💬 3</span>
+        <span class="bubble-action">⭐ 1</span>
+      </div>
+    </div>
+
+    <div class="bubble" style="background: var(--b8);">
+      <div class="bubble-header">
+        <div class="bubble-avatar">🦉</div>
+        <div class="bubble-meta"><div class="bubble-name">匿名猫头鹰 #9012</div><div class="bubble-time">8 小时前</div></div>
+      </div>
+      <span class="bubble-tag-label">🕳️ 树洞</span>
+      <div class="bubble-content">凌晨三点还在写论文，窗外的月亮很圆。突然觉得这四年过得好快，下个月就要毕业了。舍不得这个城市，舍不得这些人。虽然我们可能再也不会见面了。</div>
+      <div class="bubble-footer">
+        <span class="bubble-action">❤️ 312</span>
+        <span class="bubble-action">💬 89</span>
+        <span class="bubble-action">⭐ 145</span>
+      </div>
+    </div>
+
+    <div class="bubble" style="background: var(--b1);">
+      <div class="bubble-header">
+        <div class="bubble-avatar">🐧</div>
+        <div class="bubble-meta"><div class="bubble-name">匿名企鹅 #6677</div><div class="bubble-time">10 小时前</div></div>
+      </div>
+      <span class="bubble-tag-label">💌 表白</span>
+      <div class="bubble-content">学长，你教我高数的那个下午，阳光刚好照在你的侧脸上，我就知道完了。</div>
+      <div class="bubble-footer">
+        <span class="bubble-action">❤️ 267</span>
+        <span class="bubble-action">💬 54</span>
+        <span class="bubble-action">⭐ 78</span>
+      </div>
+    </div>
+
+    <div class="bubble" style="background: var(--b7);">
+      <div class="bubble-header">
+        <div class="bubble-avatar">🐰</div>
+        <div class="bubble-meta"><div class="bubble-name">匿名兔子 #3344</div><div class="bubble-time">12 小时前</div></div>
+      </div>
+      <span class="bubble-tag-label">😤 吐槽</span>
+      <div class="bubble-content">选课系统又崩了！！！每次都是这样，几千人同时抢课，服务器撑不住。学校什么时候能升级一下系统啊，都2026年了！</div>
+      <div class="bubble-footer">
+        <span class="bubble-action">❤️ 445</span>
+        <span class="bubble-action">💬 132</span>
+        <span class="bubble-action">⭐ 56</span>
+      </div>
+    </div>
+
+    <div class="bubble" style="background: var(--b4);">
+      <div class="bubble-header">
+        <div class="bubble-avatar">🐶</div>
+        <div class="bubble-meta"><div class="bubble-name">匿名柴犬 #1199</div><div class="bubble-time">14 小时前</div></div>
+      </div>
+      <span class="bubble-tag-label">🆘 求助</span>
+      <div class="bubble-content">有人知道学校附近哪家打印店比较便宜吗？论文要打印80页，太贵了扛不住...</div>
+      <div class="bubble-footer">
+        <span class="bubble-action">❤️ 18</span>
+        <span class="bubble-action">💬 24</span>
+        <span class="bubble-action">⭐ 6</span>
+      </div>
+    </div>
+
+    <div class="bubble" style="background: var(--b3);">
+      <div class="bubble-header">
+        <div class="bubble-avatar">🦋</div>
+        <div class="bubble-meta"><div class="bubble-name">匿名蝴蝶 #8800</div><div class="bubble-time">1 天前</div></div>
+      </div>
+      <span class="bubble-tag-label">🕳️ 树洞</span>
+      <div class="bubble-content">今天和妈妈打了一个很长的电话，她说家里的桂花树开花了，香味飘到了二楼。突然很想家。</div>
+      <div class="bubble-footer">
+        <span class="bubble-action">❤️ 178</span>
+        <span class="bubble-action">💬 42</span>
+        <span class="bubble-action">⭐ 67</span>
+      </div>
+    </div>
+
+    <div class="bubble" style="background: var(--b5);">
+      <div class="bubble-header">
+        <div class="bubble-avatar">🦄</div>
+        <div class="bubble-meta"><div class="bubble-name">匿名独角兽 #5500</div><div class="bubble-time">1 天前</div></div>
+      </div>
+      <span class="bubble-tag-label">💌 表白</span>
+      <div class="bubble-content">感谢那个在雨天把伞借给我的男生，你的校园卡掉了，我一直想还给你但不知道怎么联系你。上面写着机械学院的。</div>
+      <div class="bubble-img" style="background: linear-gradient(135deg, rgba(255,255,255,0.3), rgba(232,222,255,0.5)); height: 140px; display: flex; align-items: center; justify-content: center; color: var(--text-3); font-size: 14px;">📷 图片区域</div>
+      <div class="bubble-footer">
+        <span class="bubble-action">❤️ 89</span>
+        <span class="bubble-action">💬 56</span>
+        <span class="bubble-action">⭐ 34</span>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- FAB -->
+<button class="fab">+</button>
+
+<script>
+  // Nav scroll effect
+  window.addEventListener('scroll', () => {
+    document.getElementById('nav').classList.toggle('scrolled', window.scrollY > 20);
+  });
+
+  // Tag click
+  document.querySelectorAll('.tag').forEach(t => {
+    t.addEventListener('click', () => {
+      document.querySelectorAll('.tag').forEach(x => x.classList.remove('active'));
+      t.classList.add('active');
+    });
+  });
+
+  // Sort click
+  document.querySelectorAll('.sort-btn').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('.sort-btn').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+    });
+  });
+</script>
+</body>
+</html>

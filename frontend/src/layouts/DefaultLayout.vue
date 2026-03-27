@@ -1,12 +1,6 @@
 <template>
   <div class="layout">
-    <!-- Background Decorative Bubbles -->
-    <div class="bg-bubbles" aria-hidden="true">
-      <div class="bg-bubble b1"></div>
-      <div class="bg-bubble b2"></div>
-      <div class="bg-bubble b3"></div>
-      <div class="bg-bubble b4"></div>
-    </div>
+    <StarryBackground />
 
     <!-- Navbar -->
     <nav class="navbar">
@@ -16,31 +10,50 @@
         <span class="logo-text">AnonymousWall</span>
       </router-link>
 
-      <!-- Center: Search Bar (always visible) -->
-      <div class="search-bar" :class="{ focused: searchFocused }">
-        <span class="search-icon">🔍</span>
-        <input
-          ref="searchInput"
-          v-model="searchQuery"
-          placeholder="搜索匿名心声..."
-          @focus="searchFocused = true"
-          @blur="searchFocused = false"
-          @keyup.enter="doSearch"
-        />
-        <button v-if="searchQuery" class="search-clear" @click="clearSearch">×</button>
+      <!-- Center: Tabs / Search (scroll-linked) -->
+      <div class="nav-center">
+        <Transition name="fade" mode="out-in">
+          <div v-if="showNavTabs" key="tabs" class="nav-tabs">
+            <button
+              v-for="tab in navTabItems"
+              :key="tab.value"
+              class="nav-tab"
+              :class="{ active: activeNavTab === tab.value }"
+              @click="switchNavTab(tab.value)"
+            >
+              {{ tab.label }}
+            </button>
+          </div>
+          <div v-else key="search" class="nav-search">
+            <span class="search-icon">🔍</span>
+            <input
+              v-model="searchQuery"
+              placeholder="搜索匿名心声..."
+              @keyup.enter="doSearch"
+            />
+            <button v-if="searchQuery" class="search-clear" @click="clearSearch">×</button>
+          </div>
+        </Transition>
       </div>
 
       <!-- Right: User Area -->
       <div class="nav-right">
         <template v-if="authStore.isLoggedIn">
+          <router-link to="/messages" class="nav-icon-btn" title="消息">
+            🔔
+            <span v-if="unreadCount" class="badge">{{ unreadCount > 9 ? '9+' : unreadCount }}</span>
+          </router-link>
           <div class="user-menu" @mouseenter="showUserMenu = true" @mouseleave="showUserMenu = false">
-            <div class="avatar-btn" :style="{ background: avatarColor }">
-              {{ avatarText }}
+            <div class="avatar-btn">
+              {{ avatarEmoji }}
             </div>
             <Transition name="dropdown">
               <div v-if="showUserMenu" class="dropdown-menu">
                 <router-link to="/profile" class="dropdown-item">
                   <span>👤</span> 个人中心
+                </router-link>
+                <router-link to="/messages" class="dropdown-item">
+                  <span>✉️</span> 消息中心
                 </router-link>
                 <div class="dropdown-divider"></div>
                 <button class="dropdown-item logout" @click="handleLogout">
@@ -51,8 +64,8 @@
           </div>
         </template>
         <template v-else>
-          <router-link to="/login" class="nav-btn nav-btn-ghost">登录</router-link>
-          <router-link to="/login" class="nav-btn nav-btn-primary">注册</router-link>
+          <router-link to="/login" class="nav-btn ghost">登录</router-link>
+          <router-link to="/login?mode=register" class="nav-btn primary">注册</router-link>
         </template>
       </div>
     </nav>
@@ -72,6 +85,7 @@
       class="fab"
       :class="{ hidden: !showFab }"
       @click="$router.push('/create')"
+      title="发帖"
     >
       <span class="fab-icon">+</span>
     </button>
@@ -83,25 +97,37 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { usePostsStore } from '../stores/posts'
+import StarryBackground from '../components/StarryBackground.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
 const postsStore = usePostsStore()
 
-const avatarText = computed(() => {
+// Avatar
+const avatarEmoji = computed(() => {
   const nick = authStore.identity?.nickname || '?'
-  return nick.charAt(2) || nick.charAt(0)
+  // Extract emoji-like character or first char
+  return nick.charAt(0) === '匿' ? '🌟' : nick.charAt(0)
 })
 
-const avatarColor = computed(() => {
-  const seed = authStore.identity?.avatar_seed || '000'
-  return `#${seed.substring(0, 6)}`
-})
+// Nav tabs
+const navTabItems = [
+  { label: '发现', value: 'latest' },
+  { label: '热门', value: 'hot' },
+  { label: '推荐', value: 'recommend' },
+]
+const activeNavTab = ref('latest')
 
-// Search
-const searchFocused = ref(false)
+function switchNavTab(value: string) {
+  activeNavTab.value = value
+  postsStore.setFilter('sort', value)
+  router.push('/')
+}
+
+// Search scroll linkage
+const showNavTabs = ref(true)
 const searchQuery = ref('')
-const searchInput = ref<HTMLInputElement>()
+const unreadCount = ref(0) // TODO: fetch from API
 
 function doSearch() {
   const q = searchQuery.value.trim()
@@ -114,7 +140,24 @@ function doSearch() {
 function clearSearch() {
   searchQuery.value = ''
   postsStore.setFilter('search', undefined)
-  searchInput.value?.focus()
+}
+
+// IntersectionObserver for hero search visibility
+let heroObserver: IntersectionObserver | null = null
+
+function setupHeroObserver() {
+  const heroSearch = document.getElementById('hero-search')
+  if (!heroSearch) {
+    showNavTabs.value = true
+    return
+  }
+  heroObserver = new IntersectionObserver(
+    ([entry]) => {
+      showNavTabs.value = entry.isIntersecting
+    },
+    { threshold: 0 }
+  )
+  heroObserver.observe(heroSearch)
 }
 
 // User menu
@@ -136,27 +179,44 @@ function onScroll() {
   lastScrollY = currentY
 }
 
-onMounted(() => window.addEventListener('scroll', onScroll, { passive: true }))
-onUnmounted(() => window.removeEventListener('scroll', onScroll))
+onMounted(() => {
+  window.addEventListener('scroll', onScroll, { passive: true })
+  // Delay observer setup to wait for Home page render
+  setTimeout(setupHeroObserver, 300)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', onScroll)
+  heroObserver?.disconnect()
+})
+
+// Re-setup observer on route change
+router.afterEach(() => {
+  heroObserver?.disconnect()
+  setTimeout(setupHeroObserver, 300)
+})
 </script>
 
 <style scoped>
 .layout {
   min-height: 100vh;
+  position: relative;
 }
 
 /* ===== Navbar ===== */
 .navbar {
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 100;
   display: flex;
   align-items: center;
-  height: 72px;
-  padding: 0 40px;
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(20px) saturate(180%);
-  border-bottom: 1px solid var(--divider);
+  height: var(--nav-height);
+  padding: 0 32px;
+  background: var(--nav-bg);
+  backdrop-filter: blur(24px) saturate(1.5);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   gap: 24px;
 }
 
@@ -170,74 +230,97 @@ onUnmounted(() => window.removeEventListener('scroll', onScroll))
   transition: transform 0.2s ease;
 }
 
-.logo:hover {
-  transform: scale(1.02);
-}
-
-.logo-icon {
-  font-size: 28px;
-}
+.logo:hover { transform: scale(1.02); }
+.logo-icon { font-size: 24px; }
 
 .logo-text {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 700;
-  background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
+  background: linear-gradient(135deg, var(--brand), var(--pink));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-/* Search Bar — always visible in center */
-.search-bar {
+/* Nav Center: Tabs / Search */
+.nav-center {
   flex: 1;
-  max-width: 480px;
-  height: 44px;
   display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 0 16px;
-  background: rgba(0, 0, 0, 0.04);
-  border-radius: 22px;
-  border: 2px solid transparent;
+  justify-content: center;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.nav-tabs {
+  display: flex;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-pill);
+  padding: 4px;
+}
+
+.nav-tab {
+  padding: 6px 20px;
+  border-radius: var(--radius-pill);
+  border: none;
+  background: transparent;
+  color: var(--text-2);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
   transition: all 0.3s ease;
 }
 
-.search-bar:hover {
-  background: rgba(0, 0, 0, 0.06);
+.nav-tab:hover {
+  color: var(--text-1);
+  transform: none;
 }
 
-.search-bar.focused {
-  background: white;
-  border-color: var(--brand-primary);
-  box-shadow: 0 0 0 4px rgba(124, 92, 252, 0.1);
+.nav-tab.active {
+  background: var(--brand);
+  color: #fff;
+  transform: none;
 }
 
-.search-icon {
-  font-size: 16px;
-  flex-shrink: 0;
-  opacity: 0.5;
+/* Nav Search */
+.nav-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 38px;
+  padding: 0 14px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-pill);
+  transition: all 0.3s ease;
 }
 
-.search-bar input {
+.nav-search:focus-within {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 4px rgba(124, 92, 252, 0.25);
+}
+
+.search-icon { font-size: 14px; flex-shrink: 0; opacity: 0.5; }
+
+.nav-search input {
   flex: 1;
   border: none;
   background: transparent;
   font-size: 14px;
-  color: var(--text-primary);
+  color: var(--text-1);
   outline: none;
 }
 
-.search-bar input::placeholder {
-  color: var(--text-placeholder);
-}
+.nav-search input::placeholder { color: var(--text-3); }
 
 .search-clear {
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
   border: none;
-  background: rgba(0, 0, 0, 0.08);
-  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-2);
   font-size: 14px;
   display: flex;
   align-items: center;
@@ -246,10 +329,13 @@ onUnmounted(() => window.removeEventListener('scroll', onScroll))
   flex-shrink: 0;
 }
 
-.search-clear:hover {
-  background: rgba(0, 0, 0, 0.15);
-  transform: none;
-}
+.search-clear:hover { background: rgba(255, 255, 255, 0.2); transform: none; }
+
+/* Fade transition for tabs/search switch */
+.fade-enter-active,
+.fade-leave-active { transition: opacity 0.3s ease; }
+.fade-enter-from,
+.fade-leave-to { opacity: 0; }
 
 /* Nav Right */
 .nav-right {
@@ -259,49 +345,84 @@ onUnmounted(() => window.removeEventListener('scroll', onScroll))
   flex-shrink: 0;
 }
 
+.nav-icon-btn {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.nav-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  background: var(--pink);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+}
+
 .nav-btn {
   padding: 8px 20px;
-  border-radius: 20px;
+  border-radius: var(--radius-pill);
   font-size: 14px;
   font-weight: 600;
   text-decoration: none;
   transition: all 0.2s ease;
 }
 
-.nav-btn-ghost {
-  color: var(--text-primary);
+.nav-btn.ghost {
+  color: var(--text-2);
 }
 
-.nav-btn-ghost:hover {
-  background: rgba(0, 0, 0, 0.04);
-  color: var(--brand-primary);
+.nav-btn.ghost:hover {
+  color: var(--text-1);
+  background: rgba(255, 255, 255, 0.06);
 }
 
-.nav-btn-primary {
-  background: var(--brand-primary);
+.nav-btn.primary {
+  background: var(--brand);
   color: white;
 }
 
-.nav-btn-primary:hover {
+.nav-btn.primary:hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(124, 92, 252, 0.3);
   color: white;
 }
 
-/* User Menu Dropdown */
-.user-menu {
-  position: relative;
-}
+/* User Menu */
+.user-menu { position: relative; }
 
 .avatar-btn {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
+  background: linear-gradient(135deg, var(--brand), var(--pink));
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -317,11 +438,13 @@ onUnmounted(() => window.removeEventListener('scroll', onScroll))
   top: calc(100% + 8px);
   right: 0;
   min-width: 180px;
-  background: white;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
   border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
   padding: 8px;
   z-index: 200;
+  backdrop-filter: blur(20px);
 }
 
 .dropdown-item {
@@ -331,7 +454,7 @@ onUnmounted(() => window.removeEventListener('scroll', onScroll))
   padding: 10px 14px;
   border-radius: 10px;
   font-size: 14px;
-  color: var(--text-primary);
+  color: var(--text-1);
   text-decoration: none;
   cursor: pointer;
   border: none;
@@ -341,13 +464,13 @@ onUnmounted(() => window.removeEventListener('scroll', onScroll))
 }
 
 .dropdown-item:hover {
-  background: rgba(0, 0, 0, 0.04);
-  color: var(--brand-primary);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--brand);
 }
 
 .dropdown-item.logout:hover {
   color: var(--color-error);
-  background: rgba(248, 113, 113, 0.06);
+  background: rgba(248, 113, 113, 0.08);
 }
 
 .dropdown-divider {
@@ -358,16 +481,20 @@ onUnmounted(() => window.removeEventListener('scroll', onScroll))
 
 .dropdown-enter-active { transition: all 0.2s ease; }
 .dropdown-leave-active { transition: all 0.15s ease; }
-.dropdown-enter-from, .dropdown-leave-to {
+.dropdown-enter-from,
+.dropdown-leave-to {
   opacity: 0;
   transform: translateY(-8px) scale(0.95);
 }
 
 /* ===== Main Content ===== */
 .main-content {
+  position: relative;
+  z-index: 1;
   max-width: 1400px;
   margin: 0 auto;
-  padding: 24px 40px;
+  padding: 24px 48px;
+  padding-top: calc(var(--nav-height) + 24px);
 }
 
 /* ===== FAB ===== */
@@ -379,11 +506,11 @@ onUnmounted(() => window.removeEventListener('scroll', onScroll))
   height: 56px;
   border-radius: 50%;
   border: none;
-  background: linear-gradient(135deg, var(--brand-primary), #9B7BFC);
+  background: linear-gradient(135deg, var(--brand), var(--pink));
   color: white;
   font-size: 28px;
   cursor: pointer;
-  box-shadow: 0 8px 24px rgba(124, 92, 252, 0.3);
+  box-shadow: 0 6px 32px rgba(124, 92, 252, 0.25);
   z-index: 99;
   transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   display: flex;
@@ -398,17 +525,12 @@ onUnmounted(() => window.removeEventListener('scroll', onScroll))
 }
 
 .fab:hover {
-  transform: scale(1.1);
-  box-shadow: 0 12px 36px rgba(124, 92, 252, 0.4);
+  transform: scale(1.1) translateY(-2px);
+  box-shadow: 0 0 60px rgba(124, 92, 252, 0.25);
 }
 
-.fab:hover .fab-icon {
-  transform: rotate(90deg);
-}
-
-.fab:active {
-  transform: scale(0.95);
-}
+.fab:hover .fab-icon { transform: rotate(90deg); }
+.fab:active { transform: scale(0.95); }
 
 .fab.hidden {
   transform: translateY(100px);
@@ -416,83 +538,21 @@ onUnmounted(() => window.removeEventListener('scroll', onScroll))
   pointer-events: none;
 }
 
-/* ===== Background Bubbles ===== */
-.bg-bubbles {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  overflow: hidden;
-}
-
-.bg-bubble {
-  position: absolute;
-  border-radius: 50%;
-  opacity: 0.12;
-  animation: bubble-drift 25s ease-in-out infinite;
-}
-
-.bg-bubble.b1 {
-  width: 400px;
-  height: 400px;
-  background: radial-gradient(circle, #7C5CFC, transparent 70%);
-  top: -5%;
-  left: -5%;
-  animation-duration: 30s;
-}
-
-.bg-bubble.b2 {
-  width: 300px;
-  height: 300px;
-  background: radial-gradient(circle, #FF6B9D, transparent 70%);
-  top: 50%;
-  right: -5%;
-  animation-duration: 22s;
-  animation-delay: -7s;
-}
-
-.bg-bubble.b3 {
-  width: 250px;
-  height: 250px;
-  background: radial-gradient(circle, #34D399, transparent 70%);
-  bottom: -3%;
-  left: 25%;
-  animation-duration: 26s;
-  animation-delay: -12s;
-}
-
-.bg-bubble.b4 {
-  width: 200px;
-  height: 200px;
-  background: radial-gradient(circle, #60A5FA, transparent 70%);
-  top: 20%;
-  right: 30%;
-  animation-duration: 20s;
-  animation-delay: -4s;
-}
-
-@keyframes bubble-drift {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(30px, -40px) scale(1.05); }
-  66% { transform: translate(-20px, 25px) scale(0.95); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .bg-bubble { animation: none; }
-}
-
 /* ===== Page Transition ===== */
-.page-fade-enter-active {
-  transition: opacity 0.2s ease, transform 0.2s ease;
+.page-fade-enter-active { transition: opacity 0.2s ease, transform 0.2s ease; }
+.page-fade-leave-active { transition: opacity 0.15s ease; }
+.page-fade-enter-from { opacity: 0; transform: translateY(8px); }
+.page-fade-leave-to { opacity: 0; }
+
+/* ===== Responsive ===== */
+@media (max-width: 900px) {
+  .navbar { padding: 0 24px; }
+  .main-content { padding: 24px 24px; padding-top: calc(var(--nav-height) + 24px); }
 }
-.page-fade-leave-active {
-  transition: opacity 0.15s ease;
-}
-.page-fade-enter-from {
-  opacity: 0;
-  transform: translateY(8px);
-}
-.page-fade-leave-to {
-  opacity: 0;
+
+@media (max-width: 600px) {
+  .nav-center { display: none; }
+  .main-content { padding: 16px; padding-top: calc(var(--nav-height) + 16px); }
+  .nav-btn.ghost { display: none; }
 }
 </style>

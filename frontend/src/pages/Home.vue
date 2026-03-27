@@ -1,37 +1,44 @@
 <template>
   <div class="home">
-    <!-- Tag Filter -->
-    <div class="tag-bar">
-      <button
-        v-for="tag in tags"
-        :key="tag.value"
-        class="tag-btn"
-        :class="{ active: filters.tag === tag.value }"
-        @click="selectTag(tag.value)"
-      >
-        {{ tag.emoji }} {{ tag.label }}
-      </button>
+    <!-- Hero Search Area -->
+    <div class="hero">
+      <h1 class="hero-title">在星空中，发现你的气泡</h1>
+      <p class="hero-sub">每一个匿名气泡，都是宇宙中独特的星光</p>
+      <div class="hero-search" id="hero-search">
+        <span class="search-icon">🔍</span>
+        <input
+          v-model="heroSearchQuery"
+          placeholder="搜索你感兴趣的话题..."
+          @keyup.enter="doHeroSearch"
+        />
+        <button class="search-btn" @click="doHeroSearch">搜索</button>
+      </div>
     </div>
 
-    <!-- Sort Bar -->
-    <div class="sort-bar">
-      <div class="sort-options">
+    <!-- Filter Area -->
+    <div class="filter-area">
+      <div class="tag-chips">
+        <button
+          v-for="tag in tags"
+          :key="tag.value"
+          class="chip"
+          :class="{ active: filters.tag === tag.value }"
+          @click="selectTag(tag.value)"
+        >
+          {{ tag.emoji }} {{ tag.label }}
+        </button>
+      </div>
+      <div class="sort-pills">
         <button
           v-for="s in sortOptions"
           :key="s.value"
-          class="sort-btn"
+          class="pill"
           :class="{ active: filters.sort === s.value }"
           @click="postsStore.setFilter('sort', s.value)"
         >
           {{ s.label }}
         </button>
       </div>
-      <select class="time-select" :value="filters.time || 'all'" @change="onTimeChange">
-        <option value="all">全部时间</option>
-        <option value="today">今天</option>
-        <option value="week">本周</option>
-        <option value="month">本月</option>
-      </select>
     </div>
 
     <!-- Search Hint -->
@@ -40,8 +47,8 @@
       <button @click="clearSearch">清除搜索</button>
     </div>
 
-    <!-- Post Masonry Grid -->
-    <div class="post-grid">
+    <!-- Masonry Grid -->
+    <div class="masonry">
       <PostCard
         v-for="post in postsStore.posts"
         :key="post.id"
@@ -51,7 +58,8 @@
 
     <!-- Loading -->
     <div v-if="postsStore.loading" class="status-area">
-      <van-loading type="spinner" color="var(--brand-primary)" />
+      <div class="spinner"></div>
+      <p>加载中...</p>
     </div>
 
     <!-- Empty -->
@@ -72,6 +80,15 @@ import PostCard from '../components/PostCard.vue'
 const postsStore = usePostsStore()
 const loadMoreRef = ref<HTMLElement>()
 const filters = computed(() => postsStore.filters)
+
+const heroSearchQuery = ref('')
+
+function doHeroSearch() {
+  const q = heroSearchQuery.value.trim()
+  if (q) {
+    postsStore.setFilter('search', q)
+  }
+}
 
 const tags = [
   { label: '全部', value: undefined, emoji: '' },
@@ -123,97 +140,144 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-/* Tag Bar — centered */
-.tag-bar {
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 10px;
-  padding-bottom: 20px;
+/* Hero Section */
+.hero {
+  text-align: center;
+  padding-top: 60px;
+  padding-bottom: 40px;
 }
 
-.tag-btn {
+.hero-title {
+  font-size: 44px;
+  font-weight: 800;
+  background: linear-gradient(135deg, #fff, rgba(255, 255, 255, 0.6));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1.2;
+}
+
+.hero-sub {
+  font-size: 16px;
+  color: var(--text-2);
+  margin-top: 12px;
+}
+
+.hero-search {
+  max-width: 560px;
+  margin: 28px auto 0;
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  padding: 6px 6px 6px 20px;
+  gap: 8px;
+  transition: all 0.3s ease;
+}
+
+.hero-search:focus-within {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 4px rgba(124, 92, 252, 0.25);
+}
+
+.search-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.hero-search input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-1);
+  font-size: 15px;
+  outline: none;
+}
+
+.hero-search input::placeholder {
+  color: var(--text-3);
+}
+
+.search-btn {
+  padding: 10px 24px;
+  border-radius: 999px;
+  background: var(--brand);
+  color: white;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: box-shadow 0.3s ease;
+  flex-shrink: 0;
+}
+
+.search-btn:hover {
+  box-shadow: 0 4px 20px rgba(124, 92, 252, 0.25);
+}
+
+/* Filter Area */
+.filter-area {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.tag-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.chip {
   padding: 8px 20px;
   border-radius: 999px;
-  border: 1.5px solid var(--divider);
-  background: white;
-  color: var(--text-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-2);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
-.tag-btn:hover:not(.active) {
-  border-color: var(--brand-primary);
-  color: var(--brand-primary);
-  background: var(--brand-primary-light);
-  transform: translateY(-1px);
+.chip:hover:not(.active) {
+  border-color: var(--brand);
+  color: var(--brand);
 }
 
-.tag-btn.active {
-  background: var(--brand-primary);
+.chip.active {
+  background: var(--brand);
   color: white;
-  border-color: var(--brand-primary);
-  box-shadow: 0 2px 8px rgba(124, 92, 252, 0.25);
-  animation: tag-pop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  border-color: var(--brand);
+  box-shadow: 0 2px 12px rgba(124, 92, 252, 0.25);
 }
 
-@keyframes tag-pop {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.08); }
-  100% { transform: scale(1); }
-}
-
-/* Sort Bar */
-.sort-bar {
+.sort-pills {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 4px 0 20px;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 999px;
+  padding: 4px;
 }
 
-.sort-options {
-  display: flex;
-  gap: 20px;
-}
-
-.sort-btn {
-  background: none;
+.pill {
+  padding: 6px 16px;
+  border-radius: 999px;
   border: none;
-  font-size: 14px;
-  color: var(--text-secondary);
+  background: transparent;
+  color: var(--text-2);
+  font-size: 13px;
   cursor: pointer;
-  padding: 4px 0;
-  border-bottom: 2px solid transparent;
   transition: all 0.2s ease;
 }
 
-.sort-btn:hover {
-  color: var(--brand-primary);
-  transform: none;
-}
-
-.sort-btn.active {
-  color: var(--brand-primary);
-  border-bottom-color: var(--brand-primary);
-  font-weight: 600;
-}
-
-.time-select {
-  background: white;
-  border: 1.5px solid var(--divider);
-  border-radius: 999px;
-  padding: 6px 16px;
-  font-size: 13px;
-  color: var(--text-secondary);
-  outline: none;
-  cursor: pointer;
-  transition: border-color 0.2s ease;
-}
-
-.time-select:hover {
-  border-color: var(--brand-primary);
+.pill.active {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-1);
 }
 
 /* Search Hint */
@@ -223,16 +287,17 @@ onUnmounted(() => {
   justify-content: space-between;
   padding: 10px 16px;
   margin-bottom: 20px;
-  background: var(--brand-primary-light);
+  background: rgba(124, 92, 252, 0.1);
+  border: 1px solid rgba(124, 92, 252, 0.2);
   border-radius: 12px;
   font-size: 14px;
-  color: var(--brand-primary);
+  color: var(--brand);
 }
 
 .search-hint button {
   background: none;
   border: none;
-  color: var(--brand-primary);
+  color: var(--brand);
   font-size: 13px;
   cursor: pointer;
   font-weight: 500;
@@ -240,31 +305,29 @@ onUnmounted(() => {
 }
 
 /* Masonry Grid */
-.post-grid {
-  column-count: 2;
-  column-gap: 28px;
+.masonry {
+  column-count: 4;
+  column-gap: 20px;
 }
 
-.post-grid > :deep(*) {
-  break-inside: avoid;
-  margin-bottom: 24px;
-}
-
-@media (min-width: 768px) {
-  .post-grid {
+@media (max-width: 1199px) {
+  .masonry {
     column-count: 3;
   }
 }
 
-@media (min-width: 1024px) {
-  .post-grid {
-    column-count: 4;
+@media (max-width: 899px) {
+  .masonry {
+    column-count: 2;
+  }
+  .hero-title {
+    font-size: 32px;
   }
 }
 
-@media (min-width: 1400px) {
-  .post-grid {
-    column-count: 5;
+@media (max-width: 599px) {
+  .masonry {
+    column-count: 1;
   }
 }
 
@@ -272,12 +335,28 @@ onUnmounted(() => {
 .status-area {
   text-align: center;
   padding: 48px 0;
-  color: var(--text-secondary);
+  color: var(--text-2);
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top-color: var(--brand);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 12px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .empty-text {
   font-size: 16px;
-  color: var(--text-placeholder);
+  color: var(--text-3);
 }
 
 .load-trigger {

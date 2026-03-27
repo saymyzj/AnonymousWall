@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>详情页 B — 沉浸式单列</title>
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg: #0B0D1A;
+    --bg-surface: #12152A;
+    --text-1: #E8E6F0;
+    --text-2: #9896A8;
+    --text-3: #5D5B6E;
+    --brand: #7C5CFC;
+    --brand-glow: rgba(124,92,252,0.25);
+    --pink: #FF6B9D;
+    --cyan: #06D6A0;
+    --radius-lg: 28px;
+    --radius-md: 16px;
+    --radius-pill: 999px;
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Noto Sans SC', sans-serif;
+    --b3: linear-gradient(135deg, rgba(6,214,160,0.18), rgba(100,230,180,0.12));
+    --b3-border: rgba(6,214,160,0.2);
+  }
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text-1);
+    line-height: 1.6;
+  }
+
+  /* Background */
+  .stars { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 0; pointer-events: none; }
+  .star { position: absolute; border-radius: 50%; background: #fff; animation: twinkle 3s ease-in-out infinite alternate; }
+  @keyframes twinkle { 0% { opacity: 0.15; } 100% { opacity: 0.7; } }
+  .nebula { position: fixed; border-radius: 50%; filter: blur(120px); pointer-events: none; z-index: 0; }
+  .nebula-1 { width: 450px; height: 450px; top: -100px; left: 30%; background: rgba(6,214,160,0.12); }
+  .nebula-2 { width: 350px; height: 350px; bottom: 10%; right: 10%; background: var(--brand-glow); }
+
+  /* Nav */
+  .nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    height: 64px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 48px;
+    background: rgba(11,13,26,0.7);
+    backdrop-filter: blur(24px) saturate(1.5);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .nav-left { display: flex; align-items: center; gap: 16px; }
+  .nav-back {
+    width: 36px; height: 36px; border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.04);
+    color: var(--text-2); font-size: 18px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+  .nav-back:hover { background: rgba(255,255,255,0.1); color: var(--text-1); }
+  .nav-logo {
+    font-size: 18px; font-weight: 700;
+    background: linear-gradient(135deg, var(--brand), var(--pink));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    text-decoration: none;
+  }
+  .nav-right { display: flex; align-items: center; gap: 12px; }
+  .nav-icon-btn {
+    width: 36px; height: 36px; border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.04);
+    color: var(--text-2); font-size: 16px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+  .nav-icon-btn:hover { background: rgba(255,255,255,0.1); color: var(--text-1); }
+  .nav-avatar {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--brand), var(--pink));
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 13px; font-weight: 600;
+  }
+
+  /* ===== MAIN CONTENT ===== */
+  .page-content {
+    position: relative; z-index: 1;
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 88px 24px 100px;
+  }
+
+  /* Post bubble — large, centered */
+  .post-bubble {
+    background: var(--b3);
+    border: 1px solid var(--b3-border);
+    border-radius: var(--radius-lg);
+    padding: 40px 36px;
+    margin-bottom: 32px;
+    backdrop-filter: blur(8px);
+    position: relative;
+  }
+  .post-bubble::after {
+    content: '';
+    position: absolute; bottom: -16px; left: 50%;
+    transform: translateX(-50%);
+    width: 40px; height: 4px;
+    background: rgba(6,214,160,0.3);
+    border-radius: 2px;
+  }
+  .post-tag {
+    display: inline-block; padding: 5px 16px;
+    background: rgba(255,255,255,0.1);
+    border-radius: var(--radius-pill);
+    font-size: 14px; font-weight: 600;
+    margin-bottom: 20px;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .post-content {
+    font-size: 20px; line-height: 1.9;
+    margin-bottom: 28px;
+    letter-spacing: 0.3px;
+  }
+  .post-images {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;
+    margin-bottom: 28px;
+  }
+  .post-img {
+    border-radius: var(--radius-md);
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.08);
+    aspect-ratio: 4/3;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-3); font-size: 32px;
+  }
+
+  /* Author + actions */
+  .post-footer {
+    display: flex; align-items: center; gap: 14px;
+    padding-top: 24px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+  .post-avatar {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: rgba(255,255,255,0.08);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  .post-author-info { flex: 1; }
+  .post-author-name { font-size: 15px; font-weight: 600; }
+  .post-author-time { font-size: 13px; color: var(--text-2); }
+
+  .post-actions {
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+    margin-top: 28px;
+  }
+  .action-btn {
+    display: flex; align-items: center; gap: 6px;
+    padding: 12px 22px; border-radius: var(--radius-pill);
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: var(--text-2); font-size: 14px; font-weight: 500;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .action-btn:hover { background: rgba(255,255,255,0.1); color: var(--text-1); border-color: rgba(255,255,255,0.15); }
+  .action-btn.active { color: var(--pink); border-color: rgba(255,107,157,0.3); background: rgba(255,107,157,0.08); }
+  .action-btn.dm { color: var(--cyan); border-color: rgba(6,214,160,0.3); }
+  .action-btn.dm:hover { background: rgba(6,214,160,0.1); }
+
+  /* ===== COMMENTS SECTION ===== */
+  .comments-section {
+    margin-top: 40px;
+  }
+  .comments-title {
+    font-size: 18px; font-weight: 700;
+    margin-bottom: 24px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .comments-title .count {
+    font-size: 14px; color: var(--text-3); font-weight: 400;
+  }
+
+  /* Comment input — top of comments */
+  .comment-input-box {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 20px;
+    padding: 20px;
+    margin-bottom: 28px;
+    transition: border-color 0.2s;
+  }
+  .comment-input-box:focus-within {
+    border-color: var(--brand);
+    box-shadow: 0 0 0 3px var(--brand-glow);
+  }
+  .comment-input-top {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 12px;
+  }
+  .ci-avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--brand), var(--pink));
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 14px; font-weight: 600;
+  }
+  .ci-label { font-size: 14px; color: var(--text-2); }
+  .ci-textarea {
+    width: 100%; padding: 12px 0;
+    background: transparent; border: none; outline: none;
+    color: var(--text-1); font-size: 15px; font-family: var(--font);
+    resize: none; min-height: 48px; max-height: 160px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .ci-textarea::placeholder { color: var(--text-3); }
+  .ci-toolbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding-top: 12px;
+  }
+  .ci-char { font-size: 12px; color: var(--text-3); }
+  .ci-submit {
+    padding: 8px 24px; border-radius: var(--radius-pill);
+    background: var(--brand); color: #fff; border: none;
+    font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .ci-submit:hover { background: #6B4CE6; box-shadow: 0 4px 16px var(--brand-glow); }
+
+  /* Comment list */
+  .comment {
+    margin-bottom: 24px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  .comment:last-child { border-bottom: none; }
+  .comment-main {
+    display: flex; gap: 14px;
+  }
+  .comment-avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: rgba(255,255,255,0.06);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .comment-body { flex: 1; }
+  .comment-header {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 6px;
+  }
+  .comment-name { font-size: 14px; font-weight: 600; }
+  .comment-op {
+    padding: 1px 8px; border-radius: var(--radius-pill);
+    background: var(--brand); font-size: 11px; font-weight: 600; color: #fff;
+  }
+  .comment-time { font-size: 12px; color: var(--text-3); }
+  .comment-text { font-size: 15px; line-height: 1.7; margin-bottom: 10px; }
+  .comment-actions {
+    display: flex; gap: 18px;
+  }
+  .comment-action {
+    font-size: 13px; color: var(--text-3);
+    cursor: pointer; transition: color 0.2s;
+    background: none; border: none; display: flex; align-items: center; gap: 4px;
+  }
+  .comment-action:hover { color: var(--brand); }
+
+  /* Nested replies */
+  .comment-replies {
+    margin-left: 50px;
+    margin-top: 16px;
+    padding-left: 20px;
+    border-left: 2px solid rgba(255,255,255,0.06);
+  }
+  .comment-replies .comment {
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+  }
+  .reply-to { color: var(--brand); font-weight: 500; }
+
+  /* Load more */
+  .load-more {
+    text-align: center; padding: 20px;
+  }
+  .load-more-btn {
+    padding: 10px 28px; border-radius: var(--radius-pill);
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: var(--text-2); font-size: 14px;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .load-more-btn:hover { background: rgba(255,255,255,0.08); color: var(--text-1); }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .page-content { padding: 72px 16px 80px; }
+    .post-bubble { padding: 28px 24px; }
+    .post-content { font-size: 17px; }
+    .nav { padding: 0 20px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="stars" id="stars"></div>
+<div class="nebula nebula-1"></div>
+<div class="nebula nebula-2"></div>
+
+<!-- Nav -->
+<nav class="nav">
+  <div class="nav-left">
+    <button class="nav-back">←</button>
+    <a class="nav-logo" href="#">🫧 AnonymousWall</a>
+  </div>
+  <div class="nav-right">
+    <button class="nav-icon-btn">🔔</button>
+    <div class="nav-avatar">周</div>
+  </div>
+</nav>
+
+<!-- Main -->
+<main class="page-content">
+
+  <!-- Post Bubble -->
+  <article class="post-bubble">
+    <span class="post-tag">🕳️ 树洞</span>
+    <div class="post-content">
+      其实我一直假装合群。宿舍的人约我出去玩我都会答应，但其实我真正想做的是一个人待着。<br><br>
+      下课后一个人走在路上的时候才是我最放松的时刻。不用想说什么话、做什么表情，就这样慢慢地走。<br><br>
+      不知道有没有人和我一样。也许我们在某条路上擦肩而过，彼此都不知道对方也是一个人。<br><br>
+      这大概就是树洞的意义吧。说出来就好了。
+    </div>
+    <div class="post-footer">
+      <div class="post-avatar">🐢</div>
+      <div class="post-author-info">
+        <div class="post-author-name">匿名海龟 #5514</div>
+        <div class="post-author-time">4 小时前 · 24小时后自毁</div>
+      </div>
+    </div>
+  </article>
+
+  <div class="post-actions">
+    <button class="action-btn active">❤️ 203</button>
+    <button class="action-btn">⭐ 89</button>
+    <button class="action-btn">🔗 分享</button>
+    <button class="action-btn dm">✉️ 私信</button>
+    <button class="action-btn">⚠️</button>
+  </div>
+
+  <!-- Comments Section -->
+  <section class="comments-section">
+    <h3 class="comments-title">评论 <span class="count">67 条</span></h3>
+
+    <!-- Input at top -->
+    <div class="comment-input-box">
+      <div class="comment-input-top">
+        <div class="ci-avatar">周</div>
+        <span class="ci-label">以匿名身份评论</span>
+      </div>
+      <textarea class="ci-textarea" placeholder="写下你想说的话..." rows="2"></textarea>
+      <div class="ci-toolbar">
+        <span class="ci-char">0 / 200</span>
+        <button class="ci-submit">发布评论</button>
+      </div>
+    </div>
+
+    <!-- Comments -->
+    <div class="comment">
+      <div class="comment-main">
+        <div class="comment-avatar">🦊</div>
+        <div class="comment-body">
+          <div class="comment-header">
+            <span class="comment-name">匿名 A</span>
+            <span class="comment-time">3 小时前</span>
+          </div>
+          <div class="comment-text">你不是一个人。我也是这样的，每次社交完都需要很长时间来"充电"。内向不是缺点，而是一种能量管理方式。</div>
+          <div class="comment-actions">
+            <button class="comment-action">❤️ 89</button>
+            <button class="comment-action">💬 回复</button>
+          </div>
+        </div>
+      </div>
+      <div class="comment-replies">
+        <div class="comment">
+          <div class="comment-main">
+            <div class="comment-avatar">🐢</div>
+            <div class="comment-body">
+              <div class="comment-header">
+                <span class="comment-name">匿名 B</span>
+                <span class="comment-op">楼主</span>
+                <span class="comment-time">2.5 小时前</span>
+              </div>
+              <div class="comment-text"><span class="reply-to">@匿名 A</span> 谢谢你...看到"你不是一个人"这句话的时候眼眶湿了。原来真的有人理解。</div>
+              <div class="comment-actions">
+                <button class="comment-action">❤️ 56</button>
+                <button class="comment-action">💬 回复</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="comment">
+      <div class="comment-main">
+        <div class="comment-avatar">🐱</div>
+        <div class="comment-body">
+          <div class="comment-header">
+            <span class="comment-name">匿名 C</span>
+            <span class="comment-time">3 小时前</span>
+          </div>
+          <div class="comment-text">INFP 在此举手 ✋ 一个人走路、一个人吃饭、一个人看电影，这些事情对我来说都是享受而不是孤独。世界对内向的人太不友好了。</div>
+          <div class="comment-actions">
+            <button class="comment-action">❤️ 72</button>
+            <button class="comment-action">💬 回复</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="comment">
+      <div class="comment-main">
+        <div class="comment-avatar">🌙</div>
+        <div class="comment-body">
+          <div class="comment-header">
+            <span class="comment-name">匿名 D</span>
+            <span class="comment-time">3.5 小时前</span>
+          </div>
+          <div class="comment-text">"也许我们在某条路上擦肩而过" —— 这句话太戳了。希望你能一直做自己，不用为了合群而勉强自己。</div>
+          <div class="comment-actions">
+            <button class="comment-action">❤️ 45</button>
+            <button class="comment-action">💬 回复</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="comment">
+      <div class="comment-main">
+        <div class="comment-avatar">🦉</div>
+        <div class="comment-body">
+          <div class="comment-header">
+            <span class="comment-name">匿名 E</span>
+            <span class="comment-time">4 小时前</span>
+          </div>
+          <div class="comment-text">大学四年最后悔的事就是一直在假装合群。毕业后才发现，那些"好朋友"一个都没联系了。不如从一开始就做自己。</div>
+          <div class="comment-actions">
+            <button class="comment-action">❤️ 112</button>
+            <button class="comment-action">💬 回复</button>
+          </div>
+        </div>
+      </div>
+      <div class="comment-replies">
+        <div class="comment">
+          <div class="comment-main">
+            <div class="comment-avatar">🐰</div>
+            <div class="comment-body">
+              <div class="comment-header">
+                <span class="comment-name">匿名 F</span>
+                <span class="comment-time">3.5 小时前</span>
+              </div>
+              <div class="comment-text"><span class="reply-to">@匿名 E</span> 真实了...与其花时间维护无效社交，不如投资自己。</div>
+              <div class="comment-actions">
+                <button class="comment-action">❤️ 34</button>
+                <button class="comment-action">💬 回复</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="load-more">
+      <button class="load-more-btn">加载更多评论...</button>
+    </div>
+
+  </section>
+</main>
+
+<script>
+  // Stars
+  const s = document.getElementById('stars');
+  for (let i = 0; i < 100; i++) {
+    const d = document.createElement('div');
+    d.className = 'star';
+    const sz = Math.random() * 2 + 1;
+    d.style.cssText = `width:${sz}px;height:${sz}px;top:${Math.random()*100}%;left:${Math.random()*100}%;animation-delay:${Math.random()*3}s;animation-duration:${2+Math.random()*3}s;`;
+    s.appendChild(d);
+  }
+  // Textarea auto resize
+  document.querySelector('.ci-textarea').addEventListener('input', function() {
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 160) + 'px';
+    document.querySelector('.ci-char').textContent = this.value.length + ' / 200';
+  });
+</script>
+</body>
+</html>

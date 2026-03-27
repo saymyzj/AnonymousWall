@@ -1,13 +1,16 @@
 <template>
-  <div class="comment-bubble">
+  <div class="comment-item">
     <div class="comment-header">
       <div class="anon-avatar" :style="{ background: comment.anon_color }">
         {{ comment.anon_label?.charAt(2) || 'A' }}
       </div>
-      <span class="anon-label" :style="{ color: comment.anon_color }">
-        {{ comment.is_post_author ? '楼主' : comment.anon_label }}
-      </span>
-      <span class="comment-time">{{ timeAgo(comment.created_at) }}</span>
+      <div class="comment-meta">
+        <div class="meta-top">
+          <span class="anon-name">{{ comment.is_post_author ? '楼主' : comment.anon_label }}</span>
+          <span v-if="comment.is_post_author" class="author-badge">楼主</span>
+        </div>
+        <span class="comment-time">{{ timeAgo(comment.created_at) }}</span>
+      </div>
     </div>
 
     <div class="comment-body">
@@ -41,90 +44,117 @@ function timeAgo(dateStr: string) {
 </script>
 
 <style scoped>
-.comment-bubble {
-  padding: 12px 14px;
-  margin-bottom: 8px;
-  background: rgba(0, 0, 0, 0.03);
-  border-radius: 14px;
-  transition: background 0.2s ease;
+.comment-item {
+  margin-bottom: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
 }
 
-.comment-bubble:hover {
-  background: rgba(0, 0, 0, 0.05);
+.comment-item:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
 }
 
 .comment-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 6px;
+  gap: 10px;
+  margin-bottom: 8px;
 }
 
 .anon-avatar {
-  width: 26px;
-  height: 26px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: 11px;
-  font-weight: 600;
-}
-
-.anon-label {
   font-size: 13px;
   font-weight: 600;
+  flex-shrink: 0;
+}
+
+.comment-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.meta-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.anon-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-1);
+}
+
+.author-badge {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--brand);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.6;
 }
 
 .comment-time {
-  font-size: 11px;
-  color: var(--text-secondary);
-  margin-left: auto;
-  opacity: 0.6;
+  font-size: 12px;
+  color: var(--text-3);
 }
 
 .comment-body {
-  font-size: 14px;
-  line-height: 22px;
-  color: var(--text-primary);
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--text-1);
   word-break: break-word;
+  white-space: pre-wrap;
+  margin-left: 46px;
 }
 
 .reply-to {
-  color: var(--text-secondary);
-  font-size: 13px;
+  color: var(--brand);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.reply-to b {
+  font-weight: 600;
 }
 
 .comment-actions {
   display: flex;
   gap: 16px;
-  margin-top: 6px;
+  margin-top: 8px;
+  margin-left: 46px;
 }
 
 .act-btn {
   background: none;
   border: none;
-  font-size: 12px;
-  color: var(--text-secondary);
+  font-size: 13px;
+  color: var(--text-3);
   cursor: pointer;
   padding: 2px 0;
-  opacity: 0.5;
   transition: all 0.2s ease;
 }
 
-.comment-bubble:hover .act-btn {
-  opacity: 1;
-}
-
 .act-btn:hover {
-  color: var(--brand-primary);
-  transform: none;
+  color: var(--brand);
 }
 
 .act-btn.active {
-  color: var(--brand-secondary);
-  opacity: 1;
+  color: var(--pink);
 }
 
 .act-btn.danger:hover {

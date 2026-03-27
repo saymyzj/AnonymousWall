@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Style C — Galaxy (深色宇宙主题)</title>
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0B0D1A;
+    --bg-surface: #12152A;
+    --bg-card: rgba(255,255,255,0.04);
+    --bg-card-hover: rgba(255,255,255,0.08);
+    --text-1: #E8E6F0;
+    --text-2: #9896A8;
+    --text-3: #5D5B6E;
+    --brand: #7C5CFC;
+    --brand-glow: rgba(124,92,252,0.25);
+    --pink: #FF6B9D;
+    --pink-glow: rgba(255,107,157,0.2);
+    --cyan: #06D6A0;
+    --radius-bubble: 24px;
+    --radius-pill: 999px;
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Noto Sans SC', sans-serif;
+
+    /* bubble colors — glowing variants */
+    --b1: linear-gradient(135deg, rgba(255,107,157,0.18), rgba(255,182,193,0.12));
+    --b2: linear-gradient(135deg, rgba(255,165,89,0.18), rgba(255,200,120,0.12));
+    --b3: linear-gradient(135deg, rgba(6,214,160,0.18), rgba(100,230,180,0.12));
+    --b4: linear-gradient(135deg, rgba(100,180,255,0.18), rgba(150,200,255,0.12));
+    --b5: linear-gradient(135deg, rgba(124,92,252,0.18), rgba(180,160,255,0.12));
+    --b6: linear-gradient(135deg, rgba(255,230,100,0.18), rgba(255,240,150,0.12));
+    --b7: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
+    --b8: linear-gradient(135deg, rgba(200,160,120,0.18), rgba(220,180,140,0.12));
+
+    --b1-border: rgba(255,107,157,0.2);
+    --b2-border: rgba(255,165,89,0.2);
+    --b3-border: rgba(6,214,160,0.2);
+    --b4-border: rgba(100,180,255,0.2);
+    --b5-border: rgba(124,92,252,0.2);
+    --b6-border: rgba(255,230,100,0.2);
+    --b7-border: rgba(255,255,255,0.08);
+    --b8-border: rgba(200,160,120,0.2);
+  }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text-1);
+    line-height: 1.6;
+    overflow-x: hidden;
+    min-height: 100vh;
+  }
+
+  /* ===== STARS BACKGROUND ===== */
+  .stars {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 0; pointer-events: none;
+    overflow: hidden;
+  }
+  .star {
+    position: absolute; border-radius: 50%; background: #fff;
+    animation: twinkle 3s ease-in-out infinite alternate;
+  }
+  @keyframes twinkle {
+    0% { opacity: 0.2; }
+    100% { opacity: 0.8; }
+  }
+
+  /* Nebula blobs */
+  .nebula {
+    position: fixed; border-radius: 50%; filter: blur(100px);
+    pointer-events: none; z-index: 0;
+  }
+  .nebula-1 { width: 500px; height: 500px; top: -150px; right: -100px; background: var(--brand-glow); }
+  .nebula-2 { width: 400px; height: 400px; bottom: -100px; left: -80px; background: var(--pink-glow); }
+  .nebula-3 { width: 300px; height: 300px; top: 50%; left: 50%; transform: translate(-50%,-50%); background: rgba(6,214,160,0.08); }
+
+  /* ===== NAV ===== */
+  .nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    height: 64px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 48px;
+    background: rgba(11,13,26,0.7);
+    backdrop-filter: blur(24px) saturate(1.5);
+    -webkit-backdrop-filter: blur(24px) saturate(1.5);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .nav-logo {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 20px; font-weight: 700;
+    background: linear-gradient(135deg, var(--brand), var(--pink));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-decoration: none;
+  }
+  .nav-logo span { font-size: 22px; -webkit-text-fill-color: initial; }
+  .nav-center {
+    position: absolute; left: 50%; transform: translateX(-50%);
+    display: flex; align-items: center; gap: 6px;
+    background: rgba(255,255,255,0.06);
+    border-radius: var(--radius-pill);
+    padding: 4px;
+  }
+  .nav-tab {
+    padding: 8px 20px; border-radius: var(--radius-pill);
+    border: none; background: transparent;
+    font-size: 14px; font-weight: 500; color: var(--text-2);
+    cursor: pointer; transition: all 0.2s;
+  }
+  .nav-tab:hover { color: var(--text-1); }
+  .nav-tab.active { background: var(--brand); color: #fff; }
+  .nav-right {
+    display: flex; align-items: center; gap: 14px;
+  }
+  .nav-icon-btn {
+    width: 38px; height: 38px; border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.04);
+    color: var(--text-2); font-size: 16px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s; position: relative;
+  }
+  .nav-icon-btn:hover { background: rgba(255,255,255,0.1); color: var(--text-1); border-color: rgba(255,255,255,0.2); }
+  .nav-icon-btn .dot {
+    position: absolute; top: 6px; right: 6px;
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--pink);
+  }
+  .nav-avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--brand), var(--pink));
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 14px; font-weight: 600; cursor: pointer;
+    border: 2px solid rgba(255,255,255,0.1);
+  }
+
+  /* ===== SEARCH OVERLAY (inline hero style) ===== */
+  .search-hero {
+    position: relative; z-index: 1;
+    margin-top: 64px;
+    padding: 60px 48px 40px;
+    text-align: center;
+  }
+  .search-hero h1 {
+    font-size: 44px; font-weight: 800;
+    line-height: 1.2; margin-bottom: 12px;
+    background: linear-gradient(135deg, #fff, rgba(255,255,255,0.6));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .search-hero p {
+    font-size: 16px; color: var(--text-2); margin-bottom: 32px;
+  }
+  .search-bar {
+    max-width: 560px; margin: 0 auto;
+    display: flex; align-items: center;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: var(--radius-pill);
+    padding: 6px 6px 6px 24px;
+    transition: all 0.2s;
+  }
+  .search-bar:focus-within {
+    border-color: var(--brand);
+    box-shadow: 0 0 0 4px var(--brand-glow);
+    background: rgba(255,255,255,0.08);
+  }
+  .search-bar input {
+    flex: 1; border: none; outline: none;
+    font-size: 16px; color: var(--text-1);
+    background: transparent;
+  }
+  .search-bar input::placeholder { color: var(--text-3); }
+  .search-bar button {
+    padding: 12px 28px; border-radius: var(--radius-pill);
+    background: var(--brand); color: #fff;
+    border: none; font-size: 15px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .search-bar button:hover { background: #6B4CE6; box-shadow: 0 4px 20px var(--brand-glow); }
+
+  /* ===== FILTER CHIPS ===== */
+  .filter-section {
+    position: relative; z-index: 1;
+    padding: 0 48px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 12px;
+  }
+  .chips {
+    display: flex; gap: 8px; flex-wrap: wrap;
+  }
+  .chip {
+    padding: 8px 18px; border-radius: var(--radius-pill);
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.04);
+    font-size: 13px; font-weight: 500; color: var(--text-2);
+    cursor: pointer; transition: all 0.2s;
+  }
+  .chip:hover { border-color: var(--brand); color: var(--brand); }
+  .chip.active {
+    background: var(--brand); color: #fff;
+    border-color: var(--brand);
+    box-shadow: 0 2px 12px var(--brand-glow);
+  }
+  .sort-pills {
+    display: flex; gap: 6px;
+    background: rgba(255,255,255,0.04);
+    border-radius: var(--radius-pill);
+    padding: 3px;
+  }
+  .sort-pill {
+    padding: 6px 16px; border-radius: var(--radius-pill);
+    border: none; background: transparent;
+    font-size: 13px; color: var(--text-3);
+    cursor: pointer; transition: all 0.2s;
+  }
+  .sort-pill:hover { color: var(--text-1); }
+  .sort-pill.active { background: rgba(255,255,255,0.1); color: var(--text-1); }
+
+  /* ===== MASONRY ===== */
+  .grid-section {
+    position: relative; z-index: 1;
+    padding: 0 48px 80px;
+  }
+  .masonry {
+    columns: 4;
+    column-gap: 20px;
+  }
+
+  /* ===== BUBBLE CARD ===== */
+  .bubble {
+    break-inside: avoid;
+    margin-bottom: 20px;
+    border-radius: var(--radius-bubble);
+    padding: 22px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.3s ease;
+    position: relative;
+    backdrop-filter: blur(8px);
+  }
+  .bubble:hover {
+    transform: translateY(-4px);
+    border-color: rgba(255,255,255,0.15);
+  }
+  .bubble.glow-pink:hover { box-shadow: 0 8px 40px rgba(255,107,157,0.15); }
+  .bubble.glow-blue:hover { box-shadow: 0 8px 40px rgba(100,180,255,0.15); }
+  .bubble.glow-green:hover { box-shadow: 0 8px 40px rgba(6,214,160,0.15); }
+  .bubble.glow-purple:hover { box-shadow: 0 8px 40px var(--brand-glow); }
+  .bubble.glow-orange:hover { box-shadow: 0 8px 40px rgba(255,165,89,0.15); }
+  .bubble.glow-yellow:hover { box-shadow: 0 8px 40px rgba(255,230,100,0.12); }
+
+  .bubble-tag {
+    display: inline-block; padding: 3px 10px;
+    background: rgba(255,255,255,0.08);
+    border-radius: var(--radius-pill);
+    font-size: 11px; font-weight: 600; color: var(--text-2);
+    margin-bottom: 12px;
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+  .bubble-content {
+    font-size: 15px; line-height: 1.7;
+    margin-bottom: 16px; color: var(--text-1);
+  }
+  .bubble-img {
+    width: 100%; border-radius: 16px;
+    margin-bottom: 14px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+  .bubble-footer {
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .bubble-author {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px; color: var(--text-2);
+  }
+  .bubble-avatar {
+    width: 28px; height: 28px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .bubble-stats {
+    display: flex; gap: 12px; font-size: 12px; color: var(--text-3);
+  }
+  .bubble-stat {
+    display: flex; align-items: center; gap: 4px;
+    transition: color 0.2s;
+  }
+  .bubble-stat:hover { color: var(--text-1); }
+
+  /* ===== FAB ===== */
+  .fab {
+    position: fixed; bottom: 32px; right: 32px;
+    width: 56px; height: 56px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--brand), var(--pink));
+    color: #fff; border: none; font-size: 28px;
+    cursor: pointer; z-index: 99;
+    box-shadow: 0 6px 32px var(--brand-glow);
+    transition: transform 0.25s, box-shadow 0.25s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .fab:hover {
+    transform: scale(1.1) translateY(-2px);
+    box-shadow: 0 10px 40px var(--brand-glow), 0 0 60px var(--brand-glow);
+  }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 1200px) { .masonry { columns: 3; } }
+  @media (max-width: 900px) { .masonry { columns: 2; } .nav, .search-hero, .filter-section, .grid-section { padding-left: 24px; padding-right: 24px; } .search-hero h1 { font-size: 32px; } }
+  @media (max-width: 600px) { .masonry { columns: 1; } .nav-center { display: none; } }
+</style>
+</head>
+<body>
+
+<!-- BACKGROUND -->
+<div class="stars" id="stars"></div>
+<div class="nebula nebula-1"></div>
+<div class="nebula nebula-2"></div>
+<div class="nebula nebula-3"></div>
+
+<!-- NAV -->
+<nav class="nav">
+  <a class="nav-logo" href="#">
+    <span>🫧</span> AnonymousWall
+  </a>
+  <div class="nav-center">
+    <button class="nav-tab active">发现</button>
+    <button class="nav-tab">热门</button>
+    <button class="nav-tab">推荐</button>
+  </div>
+  <div class="nav-right">
+    <button class="nav-icon-btn">🔔<span class="dot"></span></button>
+    <button class="nav-icon-btn">✉️</button>
+    <div class="nav-avatar">周</div>
+  </div>
+</nav>
+
+<!-- SEARCH HERO -->
+<section class="search-hero">
+  <h1>在星空中，发现你的气泡</h1>
+  <p>每一个匿名气泡都是一颗闪烁的星</p>
+  <div class="search-bar">
+    <input type="text" placeholder="搜索你感兴趣的话题...">
+    <button>搜索</button>
+  </div>
+</section>
+
+<!-- FILTERS -->
+<div class="filter-section">
+  <div class="chips">
+    <span class="chip active">全部</span>
+    <span class="chip">💌 表白</span>
+    <span class="chip">😤 吐槽</span>
+    <span class="chip">🆘 求助</span>
+    <span class="chip">🕳️ 树洞</span>
+    <span class="chip">🔍 失物招领</span>
+    <span class="chip">🤝 搭子</span>
+  </div>
+  <div class="sort-pills">
+    <button class="sort-pill active">最新</button>
+    <button class="sort-pill">最热</button>
+    <button class="sort-pill">推荐</button>
+  </div>
+</div>
+
+<!-- MASONRY -->
+<section class="grid-section">
+  <div class="masonry">
+
+    <div class="bubble glow-pink" style="background: var(--b1); border-color: var(--b1-border);">
+      <span class="bubble-tag">💌 表白</span>
+      <div class="bubble-content">图书馆三楼靠窗的女生，你每次翻书的样子都很好看。我想认识你，但又怕打扰到你的安宁。如果你看到这条消息，能不能给我一个微笑？</div>
+      <div class="bubble-footer">
+        <div class="bubble-author"><span class="bubble-avatar">🐼</span> 匿名熊猫</div>
+        <div class="bubble-stats"><span class="bubble-stat">❤️ 128</span><span class="bubble-stat">💬 45</span></div>
+      </div>
+    </div>
+
+    <div class="bubble glow-purple" style="background: var(--b5); border-color: var(--b5-border);">
+      <span class="bubble-tag">😤 吐槽</span>
+      <div class="bubble-content">食堂阿姨今天手抖得特别厉害！</div>
+      <div class="bubble-footer">
+        <div class="bubble-author"><span class="bubble-avatar">🐱</span> 匿名喵星人</div>
+        <div class="bubble-stats"><span class="bubble-stat">❤️ 156</span><span class="bubble-stat">💬 78</span></div>
+      </div>
+    </div>
+
+    <div class="bubble glow-green" style="background: var(--b3); border-color: var(--b3-border);">
+      <span class="bubble-tag">🕳️ 树洞</span>
+      <div class="bubble-content">其实我一直假装合群。宿舍的人约我出去玩我都会答应，但其实我真正想做的是一个人待着。下课后一个人走在路上的时候才是我最放松的时刻。不知道有没有人和我一样。</div>
+      <div class="bubble-footer">
+        <div class="bubble-author"><span class="bubble-avatar">🐢</span> 匿名海龟</div>
+        <div class="bubble-stats"><span class="bubble-stat">❤️ 203</span><span class="bubble-stat">💬 67</span></div>
+      </div>
+    </div>
+
+    <div class="bubble glow-blue" style="background: var(--b4); border-color: var(--b4-border);">
+      <span class="bubble-tag">🆘 求助</span>
+      <div class="bubble-content">大三了，考研还是直接就业？计算机专业，绩点3.2，有没有过来人分享下经验？</div>
+      <div class="bubble-footer">
+        <div class="bubble-author"><span class="bubble-avatar">🦊</span> 匿名狐狸</div>
+        <div class="bubble-stats"><span class="bubble-stat">❤️ 86</span><span class="bubble-stat">💬 92</span></div>
+      </div>
+    </div>
+
+    <div class="bubble glow-orange" style="background: var(--b2); border-color: var(--b2-border);">
+      <span class="bubble-tag">🤝 搭子</span>
+      <div class="bubble-content">有没有人周末一起去爬紫金山？最好是喜欢拍照的朋友！</div>
+      <div class="bubble-img" style="height: 160px; display: flex; align-items: center; justify-content: center; color: var(--text-3); font-size: 36px;">📷</div>
+      <div class="bubble-footer">
+        <div class="bubble-author"><span class="bubble-avatar">🐻</span> 匿名棕熊</div>
+        <div class="bubble-stats"><span class="bubble-stat">❤️ 42</span><span class="bubble-stat">💬 31</span></div>
+      </div>
+    </div>
+
+    <div class="bubble glow-yellow" style="background: var(--b6); border-color: var(--b6-border);">
+      <span class="bubble-tag">🔍 失物招领</span>
+      <div class="bubble-content">B栋302捡到蓝色保温杯，有小熊贴纸，失主来领！</div>
+      <div class="bubble-footer">
+        <div class="bubble-author"><span class="bubble-avatar">🐸</span> 匿名青蛙</div>
+        <div class="bubble-stats"><span class="bubble-stat">❤️ 5</span><span class="bubble-stat">💬 3</span></div>
+      </div>
+    </div>
+
+    <div class="bubble glow-orange" style="background: var(--b8); border-color: var(--b8-border);">
+      <span class="bubble-tag">🕳️ 树洞</span>
+      <div class="bubble-content">凌晨三点还在写论文，窗外的月亮很圆。突然觉得这四年过得好快，下个月就要毕业了。舍不得这个城市，舍不得这些人。虽然我们可能再也不会见面了。</div>
+      <div class="bubble-footer">
+        <div class="bubble-author"><span class="bubble-avatar">🦉</span> 匿名猫头鹰</div>
+        <div class="bubble-stats"><span class="bubble-stat">❤️ 312</span><span class="bubble-stat">💬 89</span></div>
+      </div>
+    </div>
+
+    <div class="bubble glow-pink" style="background: var(--b1); border-color: var(--b1-border);">
+      <span class="bubble-tag">💌 表白</span>
+      <div class="bubble-content">学长，你教我高数的那个下午，阳光刚好照在你的侧脸上，我就知道完了。</div>
+      <div class="bubble-footer">
+        <div class="bubble-author"><span class="bubble-avatar">🐧</span> 匿名企鹅</div>
+        <div class="bubble-stats"><span class="bubble-stat">❤️ 267</span><span class="bubble-stat">💬 54</span></div>
+      </div>
+    </div>
+
+    <div class="bubble" style="background: var(--b7); border-color: var(--b7-border);">
+      <span class="bubble-tag">😤 吐槽</span>
+      <div class="bubble-content">选课系统又崩了！！！每次都是这样，几千人同时抢课，服务器撑不住。都2026年了！</div>
+      <div class="bubble-footer">
+        <div class="bubble-author"><span class="bubble-avatar">🐰</span> 匿名兔子</div>
+        <div class="bubble-stats"><span class="bubble-stat">❤️ 445</span><span class="bubble-stat">💬 132</span></div>
+      </div>
+    </div>
+
+    <div class="bubble glow-purple" style="background: var(--b5); border-color: var(--b5-border);">
+      <span class="bubble-tag">💌 表白</span>
+      <div class="bubble-content">感谢雨天借伞的男生，你的校园卡掉了，上面写着机械学院的。我想还给你！</div>
+      <div class="bubble-img" style="height: 180px; display: flex; align-items: center; justify-content: center; color: var(--text-3); font-size: 36px;">📷</div>
+      <div class="bubble-footer">
+        <div class="bubble-author"><span class="bubble-avatar">🦄</span> 匿名独角兽</div>
+        <div class="bubble-stats"><span class="bubble-stat">❤️ 89</span><span class="bubble-stat">💬 56</span></div>
+      </div>
+    </div>
+
+    <div class="bubble glow-green" style="background: var(--b3); border-color: var(--b3-border);">
+      <span class="bubble-tag">🕳️ 树洞</span>
+      <div class="bubble-content">今天和妈妈打了一个很长的电话，她说家里的桂花树开花了，香味飘到了二楼。突然很想家。</div>
+      <div class="bubble-footer">
+        <div class="bubble-author"><span class="bubble-avatar">🦋</span> 匿名蝴蝶</div>
+        <div class="bubble-stats"><span class="bubble-stat">❤️ 178</span><span class="bubble-stat">💬 42</span></div>
+      </div>
+    </div>
+
+    <div class="bubble glow-blue" style="background: var(--b4); border-color: var(--b4-border);">
+      <span class="bubble-tag">🆘 求助</span>
+      <div class="bubble-content">学校附近哪家打印店便宜？论文80页...</div>
+      <div class="bubble-footer">
+        <div class="bubble-author"><span class="bubble-avatar">🐶</span> 匿名柴犬</div>
+        <div class="bubble-stats"><span class="bubble-stat">❤️ 18</span><span class="bubble-stat">💬 24</span></div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- FAB -->
+<button class="fab">+</button>
+
+<script>
+  // Generate stars
+  const starsEl = document.getElementById('stars');
+  for (let i = 0; i < 120; i++) {
+    const star = document.createElement('div');
+    star.className = 'star';
+    const size = Math.random() * 2 + 1;
+    star.style.cssText = `
+      width: ${size}px; height: ${size}px;
+      top: ${Math.random() * 100}%; left: ${Math.random() * 100}%;
+      animation-delay: ${Math.random() * 3}s;
+      animation-duration: ${2 + Math.random() * 3}s;
+    `;
+    starsEl.appendChild(star);
+  }
+
+  // Chip click
+  document.querySelectorAll('.chip').forEach(c => {
+    c.addEventListener('click', () => {
+      document.querySelectorAll('.chip').forEach(x => x.classList.remove('active'));
+      c.classList.add('active');
+    });
+  });
+
+  // Nav tab click
+  document.querySelectorAll('.nav-tab').forEach(t => {
+    t.addEventListener('click', () => {
+      document.querySelectorAll('.nav-tab').forEach(x => x.classList.remove('active'));
+      t.classList.add('active');
+    });
+  });
+
+  // Sort pill click
+  document.querySelectorAll('.sort-pill').forEach(p => {
+    p.addEventListener('click', () => {
+      document.querySelectorAll('.sort-pill').forEach(x => x.classList.remove('active'));
+      p.classList.add('active');
+    });
+  });
+</script>
+</body>
+</html>

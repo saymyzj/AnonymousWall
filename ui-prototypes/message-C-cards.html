@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>消息中心 C — 卡片分组</title>
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg: #0B0D1A;
+    --bg-surface: #12152A;
+    --bg-glass: rgba(18,21,42,0.65);
+    --text-1: #E8E6F0;
+    --text-2: #9896A8;
+    --text-3: #5D5B6E;
+    --brand: #7C5CFC;
+    --brand-glow: rgba(124,92,252,0.25);
+    --brand-dim: rgba(124,92,252,0.08);
+    --pink: #FF6B9D;
+    --cyan: #06D6A0;
+    --orange: #FF9F43;
+    --border: rgba(255,255,255,0.08);
+    --radius-card: 24px;
+    --radius-pill: 999px;
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Noto Sans SC', sans-serif;
+  }
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text-1);
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* ===== STARS ===== */
+  .stars { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+  .star {
+    position: absolute; border-radius: 50%; background: #fff;
+    animation: twinkle var(--dur, 3s) ease-in-out infinite alternate;
+  }
+  @keyframes twinkle { 0% { opacity: 0.12; } 100% { opacity: 0.65; } }
+  .nebula { position: fixed; border-radius: 50%; filter: blur(120px); pointer-events: none; z-index: 0; }
+  .nebula-1 { width: 500px; height: 500px; top: -100px; right: 20%; background: rgba(124,92,252,0.1); }
+  .nebula-2 { width: 400px; height: 400px; bottom: 10%; left: 10%; background: rgba(6,214,160,0.08); }
+  .nebula-3 { width: 350px; height: 350px; top: 45%; right: -5%; background: rgba(255,107,157,0.06); }
+
+  /* ===== NAV ===== */
+  .nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    height: 64px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 48px;
+    background: rgba(11,13,26,0.72);
+    backdrop-filter: blur(24px) saturate(1.5);
+    -webkit-backdrop-filter: blur(24px) saturate(1.5);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-left { display: flex; align-items: center; gap: 16px; }
+  .nav-back {
+    width: 36px; height: 36px; border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.04);
+    color: var(--text-2); font-size: 18px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+  .nav-back:hover { background: rgba(255,255,255,0.1); color: var(--text-1); }
+  .nav-logo {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 18px; font-weight: 700; color: var(--brand);
+    text-decoration: none;
+  }
+  .nav-logo span { font-size: 20px; }
+  .nav-title { font-size: 16px; font-weight: 600; color: var(--text-1); }
+  .nav-right { display: flex; align-items: center; gap: 16px; }
+  .nav-bell {
+    position: relative; width: 40px; height: 40px; border-radius: 50%;
+    border: 1px solid var(--border); background: rgba(255,255,255,0.04);
+    color: var(--text-2); font-size: 18px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+  .nav-bell:hover { background: rgba(255,255,255,0.08); color: var(--text-1); }
+  .nav-bell .badge {
+    position: absolute; top: 4px; right: 4px;
+    width: 18px; height: 18px; border-radius: 50%;
+    background: var(--pink); color: #fff; font-size: 10px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    border: 2px solid var(--bg);
+  }
+
+  /* ===== MAIN ===== */
+  .main {
+    position: relative; z-index: 1;
+    max-width: 680px; margin: 0 auto;
+    padding: 88px 20px 60px;
+  }
+
+  /* ===== HEADER ===== */
+  .header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 28px;
+  }
+  .tabs {
+    display: flex; gap: 4px;
+    background: var(--bg-glass);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    padding: 4px;
+  }
+  .tab {
+    padding: 8px 24px; border-radius: var(--radius-pill);
+    font-size: 14px; font-weight: 600; cursor: pointer;
+    color: var(--text-2); background: transparent;
+    border: none; transition: all 0.25s;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .tab.active {
+    background: var(--brand); color: #fff;
+    box-shadow: 0 4px 16px rgba(124,92,252,0.35);
+  }
+  .tab .tab-badge {
+    min-width: 20px; height: 20px; border-radius: 10px;
+    background: var(--pink); color: #fff;
+    font-size: 11px; font-weight: 700; padding: 0 6px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .tab.active .tab-badge { background: rgba(255,255,255,0.25); }
+  .mark-read-btn {
+    padding: 8px 18px; border-radius: var(--radius-pill);
+    font-size: 13px; font-weight: 500; cursor: pointer;
+    color: var(--text-2); background: transparent;
+    border: 1px solid var(--border);
+    transition: all 0.25s;
+  }
+  .mark-read-btn:hover {
+    color: var(--brand); border-color: rgba(124,92,252,0.3);
+    background: rgba(124,92,252,0.06);
+  }
+
+  /* ===== DATE GROUPS ===== */
+  .section-content { display: block; }
+  .section-content.hidden { display: none; }
+
+  .date-group { margin-bottom: 20px; }
+  .date-label {
+    font-size: 13px; font-weight: 600; color: var(--text-2);
+    text-transform: uppercase; letter-spacing: 1px;
+    padding: 0 8px; margin-bottom: 10px;
+  }
+  .group-card {
+    background: var(--bg-glass);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    overflow: hidden;
+  }
+
+  /* Notification rows in card */
+  .notif-row {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 14px 20px;
+    cursor: pointer; transition: all 0.2s;
+    position: relative; overflow: hidden;
+  }
+  .notif-row + .notif-row { border-top: 1px solid rgba(255,255,255,0.04); }
+  .notif-row:hover { background: rgba(255,255,255,0.03); }
+  .notif-row.unread { border-left: 3px solid var(--brand); box-shadow: inset 4px 0 12px rgba(124,92,252,0.08); }
+  .notif-row .nr-icon {
+    width: 38px; height: 38px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0;
+  }
+  .nr-icon.comment { background: rgba(124,92,252,0.15); }
+  .nr-icon.like { background: rgba(255,107,157,0.15); }
+  .nr-icon.report { background: rgba(255,159,67,0.15); }
+  .nr-icon.system { background: rgba(6,214,160,0.15); }
+  .nr-body { flex: 1; min-width: 0; }
+  .nr-text { font-size: 14px; color: var(--text-1); line-height: 1.45; }
+  .nr-text strong { font-weight: 600; }
+  .nr-time { font-size: 12px; color: var(--text-3); margin-top: 3px; flex-shrink: 0; }
+
+  /* Dismiss button */
+  .nr-dismiss {
+    position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
+    padding: 5px 12px; border-radius: var(--radius-pill);
+    font-size: 12px; color: var(--text-3); background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border); cursor: pointer;
+    opacity: 0; transition: all 0.2s;
+  }
+  .notif-row:hover .nr-dismiss { opacity: 1; }
+  .nr-dismiss:hover { color: var(--pink); border-color: rgba(255,107,157,0.3); background: rgba(255,107,157,0.08); }
+
+  /* ===== PM CARDS ===== */
+  .pm-section { display: none; }
+  .pm-section.active { display: block; }
+
+  .pm-card {
+    background: var(--bg-glass);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    margin-bottom: 16px;
+    overflow: hidden;
+    transition: all 0.2s;
+    cursor: pointer;
+  }
+  .pm-card:hover { border-color: rgba(255,255,255,0.14); background: rgba(18,21,42,0.75); }
+  .pm-card-header {
+    display: flex; align-items: center; gap: 12px;
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  .pm-avatar {
+    width: 40px; height: 40px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 17px; flex-shrink: 0;
+    border: 1px solid var(--border);
+  }
+  .pm-avatar.a1 { background: linear-gradient(135deg, rgba(124,92,252,0.2), rgba(124,92,252,0.1)); }
+  .pm-avatar.a2 { background: linear-gradient(135deg, rgba(255,107,157,0.2), rgba(255,107,157,0.1)); }
+  .pm-avatar.a3 { background: linear-gradient(135deg, rgba(6,214,160,0.2), rgba(6,214,160,0.1)); }
+  .pm-card-name { font-size: 15px; font-weight: 600; color: var(--text-1); flex: 1; }
+  .pm-card-badge {
+    min-width: 22px; height: 22px; border-radius: 11px;
+    background: var(--brand); color: #fff;
+    font-size: 11px; font-weight: 700; padding: 0 6px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .pm-card-time { font-size: 12px; color: var(--text-3); margin-left: 8px; }
+
+  .pm-card-body { padding: 14px 20px; }
+  .pm-preview-msg {
+    display: flex; gap: 8px; align-items: flex-start;
+    margin-bottom: 8px;
+  }
+  .pm-preview-msg:last-child { margin-bottom: 0; }
+  .pm-preview-sender { font-size: 12px; font-weight: 600; color: var(--text-2); flex-shrink: 0; min-width: 24px; }
+  .pm-preview-text { font-size: 13px; color: var(--text-2); line-height: 1.4; }
+
+  .pm-card-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 20px;
+    border-top: 1px solid rgba(255,255,255,0.04);
+  }
+  .pm-view-link {
+    font-size: 13px; font-weight: 500; color: var(--brand);
+    text-decoration: none; transition: color 0.2s;
+  }
+  .pm-view-link:hover { color: #9B7DFF; }
+  .pm-post-ref {
+    font-size: 12px; color: var(--text-3);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    max-width: 280px;
+  }
+
+  /* ===== CONVERSATION MODAL ===== */
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 200;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(6px);
+    display: none; align-items: center; justify-content: center;
+    animation: fadeIn 0.2s ease;
+  }
+  .modal-overlay.open { display: flex; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+
+  .modal-card {
+    width: 90%; max-width: 520px; max-height: 80vh;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+    animation: slideUp 0.3s ease;
+  }
+  .modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .modal-header-left { display: flex; align-items: center; gap: 12px; }
+  .modal-name { font-size: 16px; font-weight: 600; color: var(--text-1); }
+  .modal-post-link {
+    font-size: 12px; color: var(--text-3);
+    text-decoration: none; display: flex; align-items: center; gap: 4px;
+  }
+  .modal-post-link:hover { color: var(--cyan); }
+  .modal-close {
+    width: 36px; height: 36px; border-radius: 50%;
+    border: 1px solid var(--border); background: rgba(255,255,255,0.04);
+    color: var(--text-2); font-size: 18px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+  .modal-close:hover { background: rgba(255,255,255,0.1); color: var(--text-1); }
+
+  .modal-messages {
+    flex: 1; overflow-y: auto; padding: 20px 24px;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .modal-time-group {
+    text-align: center; font-size: 11px; color: var(--text-3);
+    padding: 6px 0;
+  }
+  .modal-msg {
+    max-width: 72%; padding: 11px 16px; font-size: 14px; line-height: 1.5;
+    border-radius: 18px;
+  }
+  .modal-msg.them {
+    align-self: flex-start;
+    background: var(--bg-glass);
+    border: 1px solid var(--border);
+    color: var(--text-1);
+    border-bottom-left-radius: 6px;
+  }
+  .modal-msg.me {
+    align-self: flex-end;
+    background: linear-gradient(135deg, var(--brand), #9B7DFF);
+    color: #fff;
+    border-bottom-right-radius: 6px;
+  }
+
+  .modal-input-area {
+    padding: 14px 24px;
+    border-top: 1px solid var(--border);
+    display: flex; gap: 10px; align-items: flex-end;
+  }
+  .modal-textarea-wrap { flex: 1; position: relative; }
+  .modal-textarea {
+    width: 100%; padding: 11px 16px; padding-right: 56px;
+    border-radius: 18px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    color: var(--text-1); font-size: 14px; font-family: var(--font);
+    resize: none; outline: none; min-height: 42px; max-height: 100px;
+    transition: border-color 0.2s;
+  }
+  .modal-textarea:focus { border-color: rgba(124,92,252,0.4); }
+  .modal-textarea::placeholder { color: var(--text-3); }
+  .modal-char {
+    position: absolute; right: 14px; bottom: 10px;
+    font-size: 11px; color: var(--text-3);
+  }
+  .modal-char.warn { color: var(--orange); }
+  .modal-char.over { color: var(--pink); }
+  .modal-send {
+    width: 42px; height: 42px; border-radius: 50%;
+    background: var(--brand); border: none;
+    color: #fff; font-size: 18px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s; flex-shrink: 0;
+  }
+  .modal-send:hover { background: #6B4AE8; transform: scale(1.05); }
+
+  /* ===== EMPTY STATE ===== */
+  .empty-state {
+    text-align: center; padding: 80px 20px; display: none;
+  }
+  .empty-state.active { display: block; }
+  .empty-emoji { font-size: 56px; margin-bottom: 16px; }
+  .empty-title { font-size: 18px; color: var(--text-2); margin-bottom: 8px; font-weight: 500; }
+  .empty-subtitle { font-size: 14px; color: var(--text-3); }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .nav { padding: 0 16px; }
+    .main { padding: 80px 12px 60px; }
+    .header { flex-direction: column; gap: 12px; align-items: stretch; }
+    .tabs { justify-content: center; }
+    .mark-read-btn { align-self: flex-end; }
+    .pm-post-ref { max-width: 160px; }
+    .modal-card { width: 96%; max-height: 85vh; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Background -->
+<div class="stars" id="stars"></div>
+<div class="nebula nebula-1"></div>
+<div class="nebula nebula-2"></div>
+<div class="nebula nebula-3"></div>
+
+<!-- Nav -->
+<nav class="nav">
+  <div class="nav-left">
+    <button class="nav-back" title="返回">←</button>
+    <a class="nav-logo" href="#"><span>🌌</span> 匿名星球</a>
+    <span class="nav-title">消息中心</span>
+  </div>
+  <div class="nav-right">
+    <button class="nav-bell">
+      🔔
+      <span class="badge">5</span>
+    </button>
+  </div>
+</nav>
+
+<!-- Main -->
+<div class="main">
+  <!-- Header -->
+  <div class="header">
+    <div class="tabs">
+      <button class="tab active" data-tab="notif">
+        通知
+        <span class="tab-badge">3</span>
+      </button>
+      <button class="tab" data-tab="pm">
+        私信
+        <span class="tab-badge">2</span>
+      </button>
+    </div>
+    <button class="mark-read-btn">✓ 全部标为已读</button>
+  </div>
+
+  <!-- ===== NOTIFICATIONS SECTION ===== -->
+  <div class="section-content" id="notifSection">
+    <!-- Today -->
+    <div class="date-group">
+      <div class="date-label">今天</div>
+      <div class="group-card">
+        <div class="notif-row unread">
+          <div class="nr-icon comment">💬</div>
+          <div class="nr-body">
+            <div class="nr-text"><strong>匿名银河旅人</strong> 评论了你的帖子「深夜emo的时候你会做什么」</div>
+          </div>
+          <div class="nr-time">3 分钟前</div>
+          <button class="nr-dismiss">忽略</button>
+        </div>
+        <div class="notif-row unread">
+          <div class="nr-icon like">❤️</div>
+          <div class="nr-body">
+            <div class="nr-text"><strong>匿名星尘漫步者</strong> 等 12 人赞了你的帖子「今天在公司偷偷哭了」</div>
+          </div>
+          <div class="nr-time">15 分钟前</div>
+          <button class="nr-dismiss">忽略</button>
+        </div>
+        <div class="notif-row unread">
+          <div class="nr-icon comment">💬</div>
+          <div class="nr-body">
+            <div class="nr-text"><strong>匿名宇宙猫</strong> 回复了你的评论: "我也是，抱抱你！"</div>
+          </div>
+          <div class="nr-time">28 分钟前</div>
+          <button class="nr-dismiss">忽略</button>
+        </div>
+        <div class="notif-row">
+          <div class="nr-icon system">📢</div>
+          <div class="nr-body">
+            <div class="nr-text">你的投票「大家觉得远程办公好吗」已结束，共收到 <strong>89 票</strong></div>
+          </div>
+          <div class="nr-time">2 小时前</div>
+          <button class="nr-dismiss">忽略</button>
+        </div>
+        <div class="notif-row">
+          <div class="nr-icon report">⚠️</div>
+          <div class="nr-body">
+            <div class="nr-text">你的举报已处理完毕，违规内容已被移除</div>
+          </div>
+          <div class="nr-time">5 小时前</div>
+          <button class="nr-dismiss">忽略</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Yesterday -->
+    <div class="date-group">
+      <div class="date-label">昨天</div>
+      <div class="group-card">
+        <div class="notif-row">
+          <div class="nr-icon like">❤️</div>
+          <div class="nr-body">
+            <div class="nr-text"><strong>匿名极光猎人</strong> 赞了你的评论</div>
+          </div>
+          <div class="nr-time">22:15</div>
+          <button class="nr-dismiss">忽略</button>
+        </div>
+        <div class="notif-row">
+          <div class="nr-icon system">📢</div>
+          <div class="nr-body">
+            <div class="nr-text">你的帖子「某些不当言论」因违反社区规范已被下架</div>
+          </div>
+          <div class="nr-time">18:30</div>
+          <button class="nr-dismiss">忽略</button>
+        </div>
+        <div class="notif-row">
+          <div class="nr-icon report">⚠️</div>
+          <div class="nr-body">
+            <div class="nr-text">你的账号已被临时禁言 24 小时，如有疑问请联系管理员</div>
+          </div>
+          <div class="nr-time">18:28</div>
+          <button class="nr-dismiss">忽略</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Earlier -->
+    <div class="date-group">
+      <div class="date-label">更早</div>
+      <div class="group-card">
+        <div class="notif-row">
+          <div class="nr-icon like">❤️</div>
+          <div class="nr-body">
+            <div class="nr-text"><strong>匿名彗星追逐者</strong> 等 5 人赞了你的帖子「第一次发帖好紧张」</div>
+          </div>
+          <div class="nr-time">3 天前</div>
+          <button class="nr-dismiss">忽略</button>
+        </div>
+        <div class="notif-row">
+          <div class="nr-icon comment">💬</div>
+          <div class="nr-body">
+            <div class="nr-text"><strong>匿名黑洞观察者</strong> 评论了你的帖子「周末有人一起打球吗」</div>
+          </div>
+          <div class="nr-time">5 天前</div>
+          <button class="nr-dismiss">忽略</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== PM SECTION ===== -->
+  <div class="pm-section" id="pmSection">
+    <!-- Conversation Card 1 -->
+    <div class="pm-card" data-modal="modal1">
+      <div class="pm-card-header">
+        <div class="pm-avatar a1">🌙</div>
+        <span class="pm-card-name">匿名月光旅人</span>
+        <span class="pm-card-badge">2</span>
+        <span class="pm-card-time">5 分钟前</span>
+      </div>
+      <div class="pm-card-body">
+        <div class="pm-preview-msg">
+          <span class="pm-preview-sender">TA:</span>
+          <span class="pm-preview-text">你好，看到你的帖子很有感触，我也是经常深夜emo</span>
+        </div>
+        <div class="pm-preview-msg">
+          <span class="pm-preview-sender">我:</span>
+          <span class="pm-preview-text">谢谢你的私信！能遇到有共鸣的人真好</span>
+        </div>
+        <div class="pm-preview-msg">
+          <span class="pm-preview-sender">TA:</span>
+          <span class="pm-preview-text">谢谢你的分享，我最近也经历了类似的事情...</span>
+        </div>
+      </div>
+      <div class="pm-card-footer">
+        <a class="pm-view-link" href="#">查看完整对话 →</a>
+        <span class="pm-post-ref">来自: 「深夜emo的时候你会做什么」</span>
+      </div>
+    </div>
+
+    <!-- Conversation Card 2 -->
+    <div class="pm-card" data-modal="modal2">
+      <div class="pm-card-header">
+        <div class="pm-avatar a2">⭐</div>
+        <span class="pm-card-name">匿名星光收集者</span>
+        <span class="pm-card-badge">1</span>
+        <span class="pm-card-time">1 小时前</span>
+      </div>
+      <div class="pm-card-body">
+        <div class="pm-preview-msg">
+          <span class="pm-preview-sender">TA:</span>
+          <span class="pm-preview-text">远程办公那个投票我选了支持！你的观点很棒</span>
+        </div>
+      </div>
+      <div class="pm-card-footer">
+        <a class="pm-view-link" href="#">查看完整对话 →</a>
+        <span class="pm-post-ref">来自: 「大家觉得远程办公好吗」</span>
+      </div>
+    </div>
+
+    <!-- Conversation Card 3 (no unread) -->
+    <div class="pm-card" data-modal="modal3">
+      <div class="pm-card-header">
+        <div class="pm-avatar a3">🌿</div>
+        <span class="pm-card-name">匿名森林守望者</span>
+        <span class="pm-card-time">昨天</span>
+      </div>
+      <div class="pm-card-body">
+        <div class="pm-preview-msg">
+          <span class="pm-preview-sender">TA:</span>
+          <span class="pm-preview-text">看到你的帖子，想告诉你，一切都会好起来的</span>
+        </div>
+        <div class="pm-preview-msg">
+          <span class="pm-preview-sender">我:</span>
+          <span class="pm-preview-text">谢谢你的温暖，真的很感动</span>
+        </div>
+        <div class="pm-preview-msg">
+          <span class="pm-preview-sender">TA:</span>
+          <span class="pm-preview-text">好的，下次有机会再聊！</span>
+        </div>
+      </div>
+      <div class="pm-card-footer">
+        <a class="pm-view-link" href="#">查看完整对话 →</a>
+        <span class="pm-post-ref">来自: 「今天在公司偷偷哭了」</span>
+      </div>
+    </div>
+
+    <!-- Empty state (hidden by default, shown when no messages) -->
+    <div class="empty-state" id="emptyState">
+      <div class="empty-emoji">🌌</div>
+      <div class="empty-title">宇宙很安静...</div>
+      <div class="empty-subtitle">暂时没有新消息</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODALS ===== -->
+<!-- Modal 1 -->
+<div class="modal-overlay" id="modal1">
+  <div class="modal-card">
+    <div class="modal-header">
+      <div class="modal-header-left">
+        <div class="pm-avatar a1" style="width:36px;height:36px;font-size:15px;">🌙</div>
+        <div>
+          <div class="modal-name">匿名月光旅人</div>
+          <a class="modal-post-link" href="#">🔗 关联帖子: 「深夜emo的时候你会做什么」</a>
+        </div>
+      </div>
+      <button class="modal-close" onclick="closeModal('modal1')">✕</button>
+    </div>
+    <div class="modal-messages">
+      <div class="modal-time-group">今天 23:40</div>
+      <div class="modal-msg them">你好，看到你的帖子很有感触，我也是经常深夜emo</div>
+      <div class="modal-msg me">谢谢你的私信！能遇到有共鸣的人真好</div>
+      <div class="modal-time-group">今天 23:52</div>
+      <div class="modal-msg them">谢谢你的分享，我最近也经历了类似的事情，有时候觉得只有在匿名的地方才能说出真心话</div>
+    </div>
+    <div class="modal-input-area">
+      <div class="modal-textarea-wrap">
+        <textarea class="modal-textarea" placeholder="输入消息..." rows="1" maxlength="300"></textarea>
+        <span class="modal-char">0/300</span>
+      </div>
+      <button class="modal-send">↑</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal 2 -->
+<div class="modal-overlay" id="modal2">
+  <div class="modal-card">
+    <div class="modal-header">
+      <div class="modal-header-left">
+        <div class="pm-avatar a2" style="width:36px;height:36px;font-size:15px;">⭐</div>
+        <div>
+          <div class="modal-name">匿名星光收集者</div>
+          <a class="modal-post-link" href="#">🔗 关联帖子: 「大家觉得远程办公好吗」</a>
+        </div>
+      </div>
+      <button class="modal-close" onclick="closeModal('modal2')">✕</button>
+    </div>
+    <div class="modal-messages">
+      <div class="modal-time-group">今天 22:30</div>
+      <div class="modal-msg them">远程办公那个投票我选了支持！你的观点很棒</div>
+    </div>
+    <div class="modal-input-area">
+      <div class="modal-textarea-wrap">
+        <textarea class="modal-textarea" placeholder="输入消息..." rows="1" maxlength="300"></textarea>
+        <span class="modal-char">0/300</span>
+      </div>
+      <button class="modal-send">↑</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal 3 -->
+<div class="modal-overlay" id="modal3">
+  <div class="modal-card">
+    <div class="modal-header">
+      <div class="modal-header-left">
+        <div class="pm-avatar a3" style="width:36px;height:36px;font-size:15px;">🌿</div>
+        <div>
+          <div class="modal-name">匿名森林守望者</div>
+          <a class="modal-post-link" href="#">🔗 关联帖子: 「今天在公司偷偷哭了」</a>
+        </div>
+      </div>
+      <button class="modal-close" onclick="closeModal('modal3')">✕</button>
+    </div>
+    <div class="modal-messages">
+      <div class="modal-time-group">昨天 20:10</div>
+      <div class="modal-msg them">看到你的帖子，想告诉你，一切都会好起来的</div>
+      <div class="modal-msg me">谢谢你的温暖，真的很感动</div>
+      <div class="modal-msg them">好的，下次有机会再聊！</div>
+    </div>
+    <div class="modal-input-area">
+      <div class="modal-textarea-wrap">
+        <textarea class="modal-textarea" placeholder="输入消息..." rows="1" maxlength="300"></textarea>
+        <span class="modal-char">0/300</span>
+      </div>
+      <button class="modal-send">↑</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Stars
+  (function() {
+    const c = document.getElementById('stars');
+    for (let i = 0; i < 120; i++) {
+      const s = document.createElement('div');
+      s.className = 'star';
+      const size = Math.random() * 2.5 + 0.5;
+      s.style.cssText = `width:${size}px;height:${size}px;top:${Math.random()*100}%;left:${Math.random()*100}%;--dur:${2+Math.random()*4}s;animation-delay:${Math.random()*3}s;`;
+      c.appendChild(s);
+    }
+  })();
+
+  // Tab switching
+  const tabs = document.querySelectorAll('.tab');
+  const notifSection = document.getElementById('notifSection');
+  const pmSection = document.getElementById('pmSection');
+
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      tabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      if (tab.dataset.tab === 'notif') {
+        notifSection.classList.remove('hidden');
+        pmSection.classList.remove('active');
+      } else {
+        notifSection.classList.add('hidden');
+        pmSection.classList.add('active');
+      }
+    });
+  });
+
+  // Dismiss buttons
+  document.querySelectorAll('.nr-dismiss').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const row = btn.closest('.notif-row');
+      row.style.transition = 'all 0.3s ease';
+      row.style.opacity = '0';
+      row.style.maxHeight = '0';
+      row.style.padding = '0 20px';
+      row.style.overflow = 'hidden';
+      setTimeout(() => row.remove(), 300);
+    });
+  });
+
+  // PM card click -> open modal
+  document.querySelectorAll('.pm-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const modalId = card.dataset.modal;
+      openModal(modalId);
+    });
+  });
+
+  // Prevent link click from triggering card
+  document.querySelectorAll('.pm-view-link').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const card = link.closest('.pm-card');
+      const modalId = card.dataset.modal;
+      openModal(modalId);
+    });
+  });
+
+  function openModal(id) {
+    document.getElementById(id).classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  // Click overlay to close
+  document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        overlay.classList.remove('open');
+        document.body.style.overflow = '';
+      }
+    });
+  });
+
+  // Escape key to close modals
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.modal-overlay.open').forEach(m => {
+        m.classList.remove('open');
+      });
+      document.body.style.overflow = '';
+    }
+  });
+
+  // Char counters in modals
+  document.querySelectorAll('.modal-textarea').forEach(ta => {
+    const counter = ta.closest('.modal-textarea-wrap').querySelector('.modal-char');
+    ta.addEventListener('input', () => {
+      const len = ta.value.length;
+      counter.textContent = len + '/300';
+      counter.classList.toggle('warn', len > 250);
+      counter.classList.toggle('over', len >= 300);
+      ta.style.height = 'auto';
+      ta.style.height = Math.min(ta.scrollHeight, 100) + 'px';
+    });
+  });
+
+  // Mark all as read
+  document.querySelector('.mark-read-btn').addEventListener('click', () => {
+    document.querySelectorAll('.notif-row.unread').forEach(el => el.classList.remove('unread'));
+    document.querySelectorAll('.pm-card-badge').forEach(b => b.style.display = 'none');
+    document.querySelectorAll('.tab-badge').forEach(b => b.textContent = '0');
+    const navBadge = document.querySelector('.nav-bell .badge');
+    if (navBadge) navBadge.style.display = 'none';
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auth C — Fullscreen Immersive</title>
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0B0D1A;
+    --bg-card: rgba(255,255,255,0.04);
+    --text-1: #E8E6F0;
+    --text-2: #9896A8;
+    --text-3: #5D5B6E;
+    --brand: #7C5CFC;
+    --brand-glow: rgba(124,92,252,0.25);
+    --pink: #FF6B9D;
+    --cyan: #06D6A0;
+    --border: rgba(255,255,255,0.08);
+    --radius-card: 24px;
+    --radius-pill: 999px;
+    --radius-input: 16px;
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Noto Sans SC', sans-serif;
+  }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text-1);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  /* Star particles */
+  .stars { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+  .star {
+    position: absolute;
+    width: 2px; height: 2px;
+    background: #fff;
+    border-radius: 50%;
+    animation: twinkle var(--dur) ease-in-out infinite;
+    opacity: 0;
+  }
+  @keyframes twinkle {
+    0%, 100% { opacity: 0.1; }
+    50% { opacity: var(--max-o, 0.8); }
+  }
+
+  /* Shooting stars */
+  .shooting-star {
+    position: fixed;
+    width: 80px;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.8), transparent);
+    transform-origin: left center;
+    opacity: 0;
+    z-index: 0;
+    pointer-events: none;
+    animation: shoot var(--dur) linear infinite;
+    animation-delay: var(--delay);
+  }
+  @keyframes shoot {
+    0% { opacity: 0; transform: translateX(0) translateY(0) rotate(var(--angle)); }
+    5% { opacity: 1; }
+    15% { opacity: 0; transform: translateX(300px) translateY(150px) rotate(var(--angle)); }
+    100% { opacity: 0; }
+  }
+
+  /* Nebula */
+  .nebula {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(120px);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .nebula-1 {
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(124,92,252,0.15), transparent 70%);
+    top: -20%; left: -15%;
+  }
+  .nebula-2 {
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(255,107,157,0.1), transparent 70%);
+    bottom: -15%; right: -10%;
+  }
+  .nebula-3 {
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(6,214,160,0.08), transparent 70%);
+    top: 40%; right: 20%;
+  }
+
+  /* Brand glow behind card */
+  .card-glow {
+    position: fixed;
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(124,92,252,0.12), rgba(255,107,157,0.06), transparent 70%);
+    filter: blur(80px);
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  /* Top section */
+  .top-section {
+    text-align: center;
+    margin-bottom: 40px;
+    position: relative;
+    z-index: 1;
+  }
+  .logo-large {
+    font-size: 56px;
+    margin-bottom: 16px;
+    animation: logoFloat 4s ease-in-out infinite;
+  }
+  @keyframes logoFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+  .title-large {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 12px;
+  }
+  .tagline-animated {
+    font-size: 16px;
+    color: var(--text-2);
+    overflow: hidden;
+    white-space: nowrap;
+    border-right: 2px solid var(--brand);
+    animation: typing 3s steps(18) 1s forwards, blink 0.7s step-end infinite;
+    width: 0;
+    display: inline-block;
+  }
+  @keyframes typing {
+    to { width: 18em; }
+  }
+  @keyframes blink {
+    50% { border-color: transparent; }
+  }
+
+  /* Auth card with animated gradient border */
+  .auth-card-wrapper {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 440px;
+    padding: 2px;
+    border-radius: calc(var(--radius-card) + 2px);
+    margin: 0 20px;
+  }
+  .auth-card-wrapper::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: conic-gradient(
+      from var(--gradient-angle, 0deg),
+      var(--brand),
+      var(--pink),
+      var(--cyan),
+      var(--brand)
+    );
+    opacity: 0.6;
+    z-index: -1;
+    animation: rotateGradient 4s linear infinite;
+  }
+  @keyframes rotateGradient {
+    to { --gradient-angle: 360deg; }
+  }
+  /* Register the custom property for animation */
+  @property --gradient-angle {
+    syntax: '<angle>';
+    initial-value: 0deg;
+    inherits: false;
+  }
+
+  .auth-card {
+    background: rgba(11, 13, 26, 0.92);
+    border-radius: var(--radius-card);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    padding: 40px 36px 36px;
+    transition: max-height 0.5s ease;
+  }
+
+  /* Tab row */
+  .tab-row {
+    display: flex;
+    gap: 4px;
+    background: rgba(255,255,255,0.04);
+    border-radius: var(--radius-pill);
+    padding: 4px;
+    margin-bottom: 28px;
+  }
+  .tab-btn {
+    flex: 1;
+    padding: 10px 0;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-3);
+    background: none;
+    border: none;
+    border-radius: var(--radius-pill);
+    cursor: pointer;
+    transition: all 0.3s;
+    font-family: var(--font);
+  }
+  .tab-btn.active {
+    background: var(--brand);
+    color: #fff;
+    box-shadow: 0 2px 12px var(--brand-glow);
+  }
+
+  /* Form */
+  .form-panel {
+    display: none;
+    animation: fadeInUp 0.4s ease;
+  }
+  .form-panel.active { display: block; }
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .input-group { margin-bottom: 18px; }
+  .input-label {
+    display: block;
+    font-size: 13px;
+    color: var(--text-2);
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+  .input-with-icon {
+    position: relative;
+  }
+  .input-icon {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 16px;
+    pointer-events: none;
+    z-index: 1;
+  }
+  .input-field {
+    width: 100%;
+    padding: 14px 18px 14px 44px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-input);
+    color: var(--text-1);
+    font-size: 15px;
+    font-family: var(--font);
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+  }
+  .input-field.no-icon {
+    padding-left: 18px;
+  }
+  .input-field::placeholder { color: var(--text-3); }
+  .input-field:focus {
+    border-color: var(--brand);
+    box-shadow: 0 0 0 3px var(--brand-glow);
+  }
+
+  .verify-row {
+    display: flex;
+    gap: 12px;
+  }
+  .verify-row .input-with-icon { flex: 1; }
+  .verify-btn {
+    padding: 14px 18px;
+    background: rgba(124,92,252,0.15);
+    border: 1px solid rgba(124,92,252,0.3);
+    border-radius: var(--radius-input);
+    color: var(--brand);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    font-family: var(--font);
+    transition: all 0.2s;
+  }
+  .verify-btn:hover { background: rgba(124,92,252,0.25); }
+
+  /* Password strength */
+  .password-strength {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+    height: 4px;
+  }
+  .strength-seg {
+    flex: 1;
+    border-radius: 2px;
+    background: rgba(255,255,255,0.08);
+    transition: background 0.3s;
+  }
+  .strength-seg.weak { background: #FF6B6B; }
+  .strength-seg.medium { background: #FFC93C; }
+  .strength-seg.strong { background: var(--cyan); }
+  .strength-text {
+    font-size: 12px;
+    color: var(--text-3);
+    margin-top: 6px;
+  }
+
+  /* Form options */
+  .form-options {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    font-size: 13px;
+  }
+  .remember-me {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-2);
+    cursor: pointer;
+  }
+  .remember-me input[type="checkbox"] {
+    width: 16px; height: 16px;
+    accent-color: var(--brand);
+  }
+  .forgot-link {
+    color: var(--brand);
+    text-decoration: none;
+    font-weight: 500;
+  }
+  .forgot-link:hover { opacity: 0.8; }
+
+  /* Submit */
+  .submit-btn {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, var(--brand), var(--pink));
+    border: none;
+    border-radius: var(--radius-pill);
+    color: #fff;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: var(--font);
+    transition: transform 0.15s, box-shadow 0.2s;
+    box-shadow: 0 4px 20px var(--brand-glow);
+  }
+  .submit-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 28px rgba(124,92,252,0.35);
+  }
+  .submit-btn:active { transform: translateY(0); }
+
+  .toggle-link {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 14px;
+    color: var(--text-2);
+  }
+  .toggle-link a {
+    color: var(--brand);
+    text-decoration: none;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .toggle-link a:hover { text-decoration: underline; }
+
+  /* Welcome / Success state */
+  .welcome-state {
+    display: none;
+    text-align: center;
+    padding: 24px 0;
+    animation: fadeInUp 0.6s ease;
+  }
+  .welcome-state.active { display: block; }
+  .welcome-title {
+    font-size: 20px;
+    font-weight: 300;
+    color: var(--text-2);
+    margin-bottom: 8px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .welcome-universe {
+    font-size: 28px;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--brand), var(--pink), var(--cyan));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 24px;
+  }
+  .welcome-avatar {
+    width: 80px; height: 80px;
+    background: linear-gradient(135deg, var(--brand), var(--cyan));
+    border-radius: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    margin-bottom: 16px;
+    animation: logoFloat 3s ease-in-out infinite;
+  }
+  .welcome-name {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .welcome-msg {
+    font-size: 14px;
+    color: var(--text-2);
+    margin-bottom: 20px;
+  }
+  .welcome-enter-btn {
+    padding: 12px 40px;
+    background: linear-gradient(135deg, var(--brand), var(--cyan));
+    border: none;
+    border-radius: var(--radius-pill);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: var(--font);
+    transition: transform 0.15s;
+    box-shadow: 0 4px 20px rgba(6,214,160,0.2);
+  }
+  .welcome-enter-btn:hover { transform: translateY(-1px); }
+
+  /* Mobile */
+  @media (max-width: 480px) {
+    .auth-card { padding: 32px 24px 28px; }
+    .title-large { font-size: 24px; }
+    .logo-large { font-size: 44px; }
+    .top-section { margin-bottom: 28px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Nebula -->
+<div class="nebula nebula-1"></div>
+<div class="nebula nebula-2"></div>
+<div class="nebula nebula-3"></div>
+<div class="card-glow"></div>
+
+<!-- Stars -->
+<div class="stars" id="stars"></div>
+
+<!-- Shooting stars container -->
+<div id="shootingStars"></div>
+
+<!-- Top section -->
+<div class="top-section">
+  <div class="logo-large">🫧</div>
+  <div class="title-large">匿名气泡墙</div>
+  <div class="tagline-animated">在星空中留下属于你的匿名声音</div>
+</div>
+
+<!-- Card wrapper with animated gradient border -->
+<div class="auth-card-wrapper">
+  <div class="auth-card" id="authCard">
+    <!-- Tabs -->
+    <div class="tab-row" id="tabRow">
+      <button class="tab-btn active" data-tab="login">登录</button>
+      <button class="tab-btn" data-tab="register">注册</button>
+    </div>
+
+    <!-- Login Form -->
+    <div class="form-panel active" id="panel-login">
+      <div class="input-group">
+        <label class="input-label">邮箱地址</label>
+        <div class="input-with-icon">
+          <span class="input-icon">📧</span>
+          <input class="input-field" type="email" placeholder="请输入邮箱">
+        </div>
+      </div>
+      <div class="input-group">
+        <label class="input-label">密码</label>
+        <div class="input-with-icon">
+          <span class="input-icon">🔒</span>
+          <input class="input-field" type="password" placeholder="请输入密码">
+        </div>
+      </div>
+      <div class="form-options">
+        <label class="remember-me">
+          <input type="checkbox"> 记住我
+        </label>
+        <a href="#" class="forgot-link">忘记密码?</a>
+      </div>
+      <button class="submit-btn" onclick="handleLogin()">登 录</button>
+      <div class="toggle-link">
+        还没有账号？<a onclick="switchTab('register')">立即注册</a>
+      </div>
+    </div>
+
+    <!-- Register Form -->
+    <div class="form-panel" id="panel-register">
+      <div class="input-group">
+        <label class="input-label">邮箱地址</label>
+        <div class="input-with-icon">
+          <span class="input-icon">📧</span>
+          <input class="input-field" type="email" placeholder="请输入邮箱">
+        </div>
+      </div>
+      <div class="input-group">
+        <label class="input-label">密码</label>
+        <div class="input-with-icon">
+          <span class="input-icon">🔒</span>
+          <input class="input-field" type="password" placeholder="至少8位，需含字母和数字" id="regPwd" oninput="checkStrength(this.value)">
+        </div>
+        <div class="password-strength" id="strengthBar">
+          <div class="strength-seg" id="seg1"></div>
+          <div class="strength-seg" id="seg2"></div>
+          <div class="strength-seg" id="seg3"></div>
+        </div>
+        <div class="strength-text" id="strengthText"></div>
+      </div>
+      <div class="input-group">
+        <label class="input-label">确认密码</label>
+        <div class="input-with-icon">
+          <span class="input-icon">🔒</span>
+          <input class="input-field" type="password" placeholder="再次输入密码">
+        </div>
+      </div>
+      <div class="input-group">
+        <label class="input-label">邮箱验证码</label>
+        <div class="verify-row">
+          <div class="input-with-icon">
+            <span class="input-icon">✉️</span>
+            <input class="input-field" type="text" placeholder="输入验证码">
+          </div>
+          <button class="verify-btn" id="sendCodeBtn" onclick="sendCode()">发送验证码</button>
+        </div>
+      </div>
+      <button class="submit-btn" onclick="handleRegister()" style="margin-top: 8px;">注 册</button>
+      <div class="toggle-link">
+        已有账号？<a onclick="switchTab('login')">去登录</a>
+      </div>
+    </div>
+
+    <!-- Welcome state -->
+    <div class="welcome-state" id="welcomeState">
+      <div class="welcome-title">Welcome to the</div>
+      <div class="welcome-universe">Universe</div>
+      <div class="welcome-avatar" id="welcomeAvatar">🐼</div>
+      <div class="welcome-name" id="welcomeName">匿名熊猫#3927</div>
+      <div class="welcome-msg">你的匿名身份已生成，开始探索气泡宇宙吧</div>
+      <button class="welcome-enter-btn">进入宇宙 →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Stars
+  (function() {
+    const c = document.getElementById('stars');
+    for (let i = 0; i < 150; i++) {
+      const s = document.createElement('div');
+      s.className = 'star';
+      s.style.left = Math.random() * 100 + '%';
+      s.style.top = Math.random() * 100 + '%';
+      s.style.setProperty('--dur', (2 + Math.random() * 4) + 's');
+      s.style.setProperty('--max-o', (0.3 + Math.random() * 0.7).toFixed(2));
+      s.style.animationDelay = (Math.random() * 5) + 's';
+      if (Math.random() > 0.6) { s.style.width = '3px'; s.style.height = '3px'; }
+      if (Math.random() > 0.9) { s.style.width = '4px'; s.style.height = '4px'; s.style.boxShadow = '0 0 6px rgba(255,255,255,0.5)'; }
+      c.appendChild(s);
+    }
+  })();
+
+  // Shooting stars
+  (function() {
+    const c = document.getElementById('shootingStars');
+    for (let i = 0; i < 5; i++) {
+      const s = document.createElement('div');
+      s.className = 'shooting-star';
+      s.style.left = Math.random() * 80 + '%';
+      s.style.top = Math.random() * 50 + '%';
+      s.style.setProperty('--dur', (6 + Math.random() * 8) + 's');
+      s.style.setProperty('--delay', (Math.random() * 10) + 's');
+      s.style.setProperty('--angle', (25 + Math.random() * 20) + 'deg');
+      s.style.width = (60 + Math.random() * 60) + 'px';
+      c.appendChild(s);
+    }
+  })();
+
+  // Tabs
+  function switchTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+    document.querySelectorAll('.form-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('panel-' + tab).classList.add('active');
+    document.getElementById('welcomeState').classList.remove('active');
+    document.getElementById('tabRow').style.display = '';
+  }
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    b.addEventListener('click', () => switchTab(b.dataset.tab));
+  });
+
+  // Password strength
+  function checkStrength(val) {
+    const segs = [document.getElementById('seg1'), document.getElementById('seg2'), document.getElementById('seg3')];
+    const text = document.getElementById('strengthText');
+    segs.forEach(s => s.className = 'strength-seg');
+    if (!val.length) { text.textContent = ''; return; }
+    const hasLetter = /[a-zA-Z]/.test(val);
+    const hasNumber = /[0-9]/.test(val);
+    const hasSpecial = /[^a-zA-Z0-9]/.test(val);
+    let score = 0;
+    if (val.length >= 8) score++;
+    if (hasLetter && hasNumber) score++;
+    if (hasSpecial && val.length >= 10) score++;
+    if (score >= 1) { segs[0].classList.add('weak'); text.textContent = '弱'; text.style.color = '#FF6B6B'; }
+    if (score >= 2) { segs[1].classList.add('medium'); text.textContent = '中'; text.style.color = '#FFC93C'; }
+    if (score >= 3) { segs[2].classList.add('strong'); text.textContent = '强'; text.style.color = '#06D6A0'; }
+  }
+
+  // Send code
+  function sendCode() {
+    const btn = document.getElementById('sendCodeBtn');
+    btn.disabled = true; let c = 60;
+    btn.textContent = c + 's'; btn.style.opacity = '0.5';
+    const t = setInterval(() => {
+      c--; btn.textContent = c + 's';
+      if (c <= 0) { clearInterval(t); btn.textContent = '发送验证码'; btn.disabled = false; btn.style.opacity = '1'; }
+    }, 1000);
+  }
+
+  // Login / Register success
+  function handleLogin() {
+    const animals = ['熊猫','狐狸','小猫','兔子','柴犬','考拉','企鹅','海豚'];
+    const emojis = ['🐼','🦊','🐱','🐰','🐕','🐨','🐧','🐬'];
+    const i = Math.floor(Math.random() * animals.length);
+    const n = Math.floor(1000 + Math.random() * 9000);
+
+    document.querySelectorAll('.form-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('tabRow').style.display = 'none';
+    document.getElementById('welcomeState').classList.add('active');
+    document.getElementById('welcomeAvatar').textContent = emojis[i];
+    document.getElementById('welcomeName').textContent = '匿名' + animals[i] + '#' + n;
+  }
+  function handleRegister() { handleLogin(); }
+</script>
+</body>
+</html>

@@ -1,36 +1,43 @@
 :root {
-  /* Background */
-  --bg-gradient-start: #F2F0FF;
-  --bg-gradient-end: #FFF5F5;
-  --bg-primary: linear-gradient(135deg, var(--bg-gradient-start), var(--bg-gradient-end));
+  /* === Galaxy Dark Theme === */
 
-  /* Card */
-  --card-bg: rgba(255, 255, 255, 0.85);
-  --card-border: transparent;
-  --card-shadow: 0 2px 16px rgba(0, 0, 0, 0.04);
-  --card-radius: 24px;
+  /* Background */
+  --bg: #0B0D1A;
+  --bg-surface: #12152A;
+  --bg-card: rgba(255, 255, 255, 0.03);
 
   /* Text */
-  --text-primary: #1A1A2E;
-  --text-secondary: #6B7280;
-  --text-placeholder: #9CA3AF;
+  --text-1: #E8E6F0;
+  --text-2: #9896A8;
+  --text-3: #5D5B6E;
 
   /* Brand */
-  --brand-primary: #7C5CFC;
-  --brand-primary-light: rgba(124, 92, 252, 0.1);
-  --brand-secondary: #FF6B9D;
+  --brand: #7C5CFC;
+  --pink: #FF6B9D;
+  --cyan: #06D6A0;
 
   /* Function */
-  --color-success: #34D399;
+  --color-success: #06D6A0;
   --color-warning: #FBBF24;
   --color-error: #F87171;
   --color-info: #60A5FA;
 
+  /* Border */
+  --border: rgba(255, 255, 255, 0.08);
+  --border-hover: rgba(255, 255, 255, 0.15);
+
   /* Divider */
-  --divider: rgba(0, 0, 0, 0.06);
+  --divider: rgba(255, 255, 255, 0.06);
+
+  /* Radius */
+  --radius-bubble: 24px;
+  --radius-pill: 999px;
+  --radius-img: 16px;
+  --radius-input: 14px;
+  --radius-card: 20px;
 
   /* Font */
-  --font-sans: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Noto Sans SC', sans-serif;
 
   /* Spacing */
   --space-1: 4px;
@@ -44,27 +51,25 @@
   --space-12: 48px;
 
   /* Shadows */
-  --shadow-sm: 0 1px 8px rgba(0, 0, 0, 0.03);
-  --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.08);
-  --shadow-float: 0 12px 40px rgba(124, 92, 252, 0.15);
-}
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --shadow-glow: 0 4px 20px rgba(124, 92, 252, 0.25);
 
-[data-theme="dark"] {
-  --bg-gradient-start: #0D1117;
-  --bg-gradient-end: #161B22;
+  /* Nav */
+  --nav-height: 64px;
+  --nav-bg: rgba(11, 13, 26, 0.7);
 
-  --card-bg: rgba(255, 255, 255, 0.06);
-  --card-border: rgba(255, 255, 255, 0.08);
-  --card-shadow: 0 2px 16px rgba(0, 0, 0, 0.2);
-
-  --text-primary: #E6EDF3;
-  --text-secondary: #8B949E;
-  --text-placeholder: #484F58;
-
-  --brand-primary: #A78BFA;
-  --brand-primary-light: rgba(167, 139, 250, 0.12);
-  --brand-secondary: #FB7185;
-
-  --divider: rgba(255, 255, 255, 0.06);
+  /* Legacy compatibility aliases */
+  --brand-primary: var(--brand);
+  --brand-primary-light: rgba(124, 92, 252, 0.1);
+  --brand-secondary: var(--pink);
+  --text-primary: var(--text-1);
+  --text-secondary: var(--text-2);
+  --text-placeholder: var(--text-3);
+  --card-bg: var(--bg-card);
+  --card-border: var(--border);
+  --card-shadow: var(--shadow-sm);
+  --card-radius: var(--radius-bubble);
+  --bg-primary: var(--bg);
 }

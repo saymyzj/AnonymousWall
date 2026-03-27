@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Style B — Pinterest Bubbles (内容优先瀑布流)</title>
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #F5F3FF;
+    --bg-nav: rgba(255,255,255,0.75);
+    --text-1: #1A1A2E;
+    --text-2: #6B7280;
+    --text-3: #9CA3AF;
+    --brand: #7C5CFC;
+    --brand-light: #EDE9FE;
+    --pink: #FF6B9D;
+    --radius-bubble: 24px;
+    --radius-pill: 999px;
+    --shadow-soft: 0 2px 12px rgba(0,0,0,0.04);
+    --shadow-hover: 0 16px 48px rgba(124,92,252,0.14);
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Noto Sans SC', sans-serif;
+    --b1: linear-gradient(160deg, #FFE0EC, #FFD0E0);
+    --b2: linear-gradient(160deg, #FFE0C2, #FFD4A8);
+    --b3: linear-gradient(160deg, #D0F4EA, #C0ECDC);
+    --b4: linear-gradient(160deg, #D6ECFF, #C4E2FF);
+    --b5: linear-gradient(160deg, #E8DEFF, #DCD0FC);
+    --b6: linear-gradient(160deg, #FFF9C4, #FFF59D);
+    --b7: linear-gradient(160deg, #F8F8F8, #F0F0F0);
+    --b8: linear-gradient(160deg, #F0E6D8, #E8DACA);
+  }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text-1);
+    line-height: 1.6;
+  }
+
+  /* ===== SIDEBAR NAV ===== */
+  .sidebar {
+    position: fixed; top: 0; left: 0; bottom: 0;
+    width: 240px; z-index: 100;
+    background: #fff;
+    border-right: 1px solid rgba(0,0,0,0.05);
+    padding: 24px 0;
+    display: flex; flex-direction: column;
+  }
+  .sidebar-logo {
+    display: flex; align-items: center; gap: 10px;
+    padding: 0 24px; margin-bottom: 32px;
+    font-size: 20px; font-weight: 700; color: var(--brand);
+    text-decoration: none;
+  }
+  .sidebar-logo span { font-size: 24px; }
+  .sidebar-nav { flex: 1; }
+  .sidebar-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 24px; margin: 2px 12px;
+    border-radius: 14px;
+    font-size: 15px; font-weight: 500; color: var(--text-2);
+    text-decoration: none; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .sidebar-item:hover { background: var(--brand-light); color: var(--brand); }
+  .sidebar-item.active { background: var(--brand); color: #fff; }
+  .sidebar-item .icon { font-size: 18px; width: 24px; text-align: center; }
+  .sidebar-divider { height: 1px; background: #F0F0F0; margin: 16px 24px; }
+  .sidebar-section-title {
+    padding: 8px 24px; font-size: 11px; font-weight: 700;
+    color: var(--text-3); text-transform: uppercase; letter-spacing: 1px;
+  }
+  .sidebar-bottom {
+    padding: 16px 24px;
+    border-top: 1px solid rgba(0,0,0,0.05);
+  }
+  .sidebar-profile {
+    display: flex; align-items: center; gap: 12px; cursor: pointer;
+  }
+  .sidebar-avatar {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--brand), var(--pink));
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 16px; font-weight: 600;
+  }
+  .sidebar-user-info { flex: 1; }
+  .sidebar-user-name { font-size: 14px; font-weight: 600; }
+  .sidebar-user-id { font-size: 12px; color: var(--text-3); }
+
+  /* ===== MAIN ===== */
+  .main {
+    margin-left: 240px;
+    min-height: 100vh;
+  }
+
+  /* ===== TOP BAR ===== */
+  .topbar {
+    position: sticky; top: 0; z-index: 50;
+    padding: 16px 40px;
+    display: flex; align-items: center; gap: 20px;
+    background: var(--bg-nav);
+    backdrop-filter: blur(20px) saturate(1.8);
+    -webkit-backdrop-filter: blur(20px) saturate(1.8);
+    border-bottom: 1px solid rgba(0,0,0,0.04);
+  }
+  .search-box {
+    flex: 1; max-width: 600px;
+    display: flex; align-items: center;
+    background: #F3F0FF;
+    border-radius: var(--radius-pill);
+    padding: 10px 20px; gap: 10px;
+    border: 2px solid transparent;
+    transition: all 0.2s;
+  }
+  .search-box:focus-within { background: #fff; border-color: var(--brand); box-shadow: 0 0 0 4px rgba(124,92,252,0.1); }
+  .search-box .icon { color: var(--text-3); font-size: 16px; }
+  .search-box input {
+    flex: 1; border: none; outline: none;
+    font-size: 15px; background: transparent; color: var(--text-1);
+  }
+  .search-box input::placeholder { color: var(--text-3); }
+  .topbar-tags {
+    display: flex; gap: 8px;
+  }
+  .topbar-tag {
+    padding: 6px 16px; border-radius: var(--radius-pill);
+    background: transparent; border: 1.5px solid #E5E7EB;
+    font-size: 13px; font-weight: 500; color: var(--text-2);
+    cursor: pointer; transition: all 0.15s; white-space: nowrap;
+  }
+  .topbar-tag:hover { border-color: var(--brand); color: var(--brand); }
+  .topbar-tag.active { background: var(--brand); color: #fff; border-color: var(--brand); }
+  .topbar-right {
+    display: flex; gap: 10px; margin-left: auto;
+  }
+  .topbar-btn {
+    width: 40px; height: 40px; border-radius: 50%;
+    border: none; background: #F3F0FF;
+    color: var(--brand); font-size: 18px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s; position: relative;
+  }
+  .topbar-btn:hover { background: var(--brand); color: #fff; }
+  .topbar-btn .badge {
+    position: absolute; top: 2px; right: 2px;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: #EF4444; color: #fff; font-size: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700;
+  }
+
+  /* ===== CONTENT AREA ===== */
+  .content {
+    padding: 28px 40px 80px;
+  }
+
+  /* ===== PINTEREST MASONRY ===== */
+  .masonry {
+    columns: 5;
+    column-gap: 20px;
+  }
+
+  .bubble {
+    break-inside: avoid;
+    margin-bottom: 20px;
+    border-radius: var(--radius-bubble);
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    position: relative;
+  }
+  .bubble:hover {
+    transform: translateY(-4px) scale(1.01);
+    box-shadow: var(--shadow-hover);
+  }
+  .bubble-inner {
+    padding: 20px;
+  }
+
+  /* Compact bubble (short content) */
+  .bubble.compact .bubble-inner { padding: 16px; }
+  .bubble.compact .bubble-content { font-size: 14px; }
+
+  /* Bubble with image */
+  .bubble-image {
+    width: 100%;
+    aspect-ratio: auto;
+    object-fit: cover;
+    display: block;
+    background: rgba(255,255,255,0.3);
+  }
+  .bubble.has-image .bubble-inner { padding-top: 14px; }
+
+  .bubble-content {
+    font-size: 15px; line-height: 1.65;
+    margin-bottom: 12px;
+  }
+  .bubble-tag-label {
+    display: inline-block; padding: 2px 10px;
+    background: rgba(255,255,255,0.55);
+    border-radius: var(--radius-pill);
+    font-size: 11px; font-weight: 600;
+    backdrop-filter: blur(4px);
+    margin-bottom: 10px;
+  }
+  .bubble-bottom {
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .bubble-author {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px; font-weight: 500; color: var(--text-2);
+  }
+  .bubble-author-avatar {
+    width: 24px; height: 24px; border-radius: 50%;
+    background: rgba(255,255,255,0.55);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; backdrop-filter: blur(4px);
+  }
+  .bubble-stats {
+    display: flex; gap: 10px; font-size: 12px; color: var(--text-2);
+  }
+  .bubble-stat {
+    display: flex; align-items: center; gap: 3px;
+    transition: color 0.2s;
+  }
+  .bubble-stat:hover { color: var(--brand); }
+
+  /* Overlay actions on hover */
+  .bubble-overlay {
+    position: absolute; top: 12px; right: 12px;
+    display: flex; gap: 6px;
+    opacity: 0; transition: opacity 0.2s;
+  }
+  .bubble:hover .bubble-overlay { opacity: 1; }
+  .bubble-overlay-btn {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: rgba(255,255,255,0.85);
+    border: none; font-size: 14px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    backdrop-filter: blur(4px);
+    transition: all 0.15s;
+  }
+  .bubble-overlay-btn:hover { background: #fff; transform: scale(1.1); }
+
+  /* ===== FAB ===== */
+  .fab {
+    position: fixed; bottom: 32px; right: 32px;
+    width: 56px; height: 56px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--brand), var(--pink));
+    color: #fff; border: none; font-size: 28px;
+    cursor: pointer; z-index: 99;
+    box-shadow: 0 6px 24px rgba(124,92,252,0.35);
+    transition: transform 0.25s, box-shadow 0.25s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .fab:hover {
+    transform: scale(1.1) translateY(-2px);
+    box-shadow: 0 10px 32px rgba(124,92,252,0.45);
+  }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 1400px) { .masonry { columns: 4; } }
+  @media (max-width: 1100px) { .masonry { columns: 3; } }
+  @media (max-width: 800px) {
+    .sidebar { display: none; }
+    .main { margin-left: 0; }
+    .masonry { columns: 2; }
+    .topbar { padding: 12px 16px; }
+    .content { padding: 16px 16px 80px; }
+    .topbar-tags { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <a class="sidebar-logo" href="#">
+    <span>🫧</span> AnonymousWall
+  </a>
+  <nav class="sidebar-nav">
+    <a class="sidebar-item active">
+      <span class="icon">🏠</span> 发现
+    </a>
+    <a class="sidebar-item">
+      <span class="icon">🔥</span> 热门
+    </a>
+    <a class="sidebar-item">
+      <span class="icon">✨</span> 推荐
+    </a>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section-title">标签分类</div>
+    <a class="sidebar-item">
+      <span class="icon">💌</span> 表白
+    </a>
+    <a class="sidebar-item">
+      <span class="icon">😤</span> 吐槽
+    </a>
+    <a class="sidebar-item">
+      <span class="icon">🆘</span> 求助
+    </a>
+    <a class="sidebar-item">
+      <span class="icon">🕳️</span> 树洞
+    </a>
+    <a class="sidebar-item">
+      <span class="icon">🔍</span> 失物招领
+    </a>
+    <a class="sidebar-item">
+      <span class="icon">🤝</span> 搭子
+    </a>
+    <div class="sidebar-divider"></div>
+    <a class="sidebar-item">
+      <span class="icon">📬</span> 消息
+    </a>
+    <a class="sidebar-item">
+      <span class="icon">⭐</span> 收藏
+    </a>
+  </nav>
+  <div class="sidebar-bottom">
+    <div class="sidebar-profile">
+      <div class="sidebar-avatar">周</div>
+      <div class="sidebar-user-info">
+        <div class="sidebar-user-name">匿名熊猫 #3927</div>
+        <div class="sidebar-user-id">个人中心</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="search-box">
+      <span class="icon">🔍</span>
+      <input type="text" placeholder="搜索气泡...">
+    </div>
+    <div class="topbar-tags">
+      <span class="topbar-tag active">全部</span>
+      <span class="topbar-tag">💌 表白</span>
+      <span class="topbar-tag">😤 吐槽</span>
+      <span class="topbar-tag">🆘 求助</span>
+      <span class="topbar-tag">🕳️ 树洞</span>
+      <span class="topbar-tag">🤝 搭子</span>
+    </div>
+    <div class="topbar-right">
+      <button class="topbar-btn">🔔<span class="badge">3</span></button>
+      <button class="topbar-btn">✉️</button>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+    <div class="masonry">
+
+      <!-- Bubble 1: Long text -->
+      <div class="bubble" style="background: var(--b1);">
+        <div class="bubble-overlay">
+          <button class="bubble-overlay-btn">❤️</button>
+          <button class="bubble-overlay-btn">⭐</button>
+        </div>
+        <div class="bubble-inner">
+          <span class="bubble-tag-label">💌 表白</span>
+          <div class="bubble-content">图书馆三楼靠窗的女生，你每次翻书的样子都很好看。我想认识你，但又怕打扰到你的安宁。如果你看到这条消息，能不能给我一个微笑？</div>
+          <div class="bubble-bottom">
+            <div class="bubble-author">
+              <span class="bubble-author-avatar">🐼</span> 匿名熊猫
+            </div>
+            <div class="bubble-stats">
+              <span class="bubble-stat">❤️ 128</span>
+              <span class="bubble-stat">💬 45</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bubble 2: Short -->
+      <div class="bubble compact" style="background: var(--b5);">
+        <div class="bubble-overlay">
+          <button class="bubble-overlay-btn">❤️</button>
+          <button class="bubble-overlay-btn">⭐</button>
+        </div>
+        <div class="bubble-inner">
+          <span class="bubble-tag-label">😤 吐槽</span>
+          <div class="bubble-content">食堂阿姨今天手抖得特别厉害！打的饭连猫都嫌少 🐱</div>
+          <div class="bubble-bottom">
+            <div class="bubble-author">
+              <span class="bubble-author-avatar">🐱</span> 匿名喵星人
+            </div>
+            <div class="bubble-stats">
+              <span class="bubble-stat">❤️ 156</span>
+              <span class="bubble-stat">💬 78</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bubble 3: With image placeholder -->
+      <div class="bubble has-image" style="background: var(--b2);">
+        <div class="bubble-overlay">
+          <button class="bubble-overlay-btn">❤️</button>
+          <button class="bubble-overlay-btn">⭐</button>
+        </div>
+        <div class="bubble-image" style="height: 200px; background: linear-gradient(180deg, rgba(255,224,194,0.3), rgba(255,212,168,0.6)); display: flex; align-items: center; justify-content: center; color: var(--text-3); font-size: 40px;">📷</div>
+        <div class="bubble-inner">
+          <span class="bubble-tag-label">🤝 搭子</span>
+          <div class="bubble-content">有没有人周末一起去爬紫金山？最好是喜欢拍照的朋友，可以互相拍！</div>
+          <div class="bubble-bottom">
+            <div class="bubble-author">
+              <span class="bubble-author-avatar">🐻</span> 匿名棕熊
+            </div>
+            <div class="bubble-stats">
+              <span class="bubble-stat">❤️ 42</span>
+              <span class="bubble-stat">💬 31</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bubble 4 -->
+      <div class="bubble" style="background: var(--b3);">
+        <div class="bubble-overlay">
+          <button class="bubble-overlay-btn">❤️</button>
+          <button class="bubble-overlay-btn">⭐</button>
+        </div>
+        <div class="bubble-inner">
+          <span class="bubble-tag-label">🕳️ 树洞</span>
+          <div class="bubble-content">其实我一直假装合群。宿舍的人约我出去玩我都会答应，但其实我真正想做的是一个人待着。下课后一个人走在路上的时候才是我最放松的时刻。不知道有没有人和我一样。</div>
+          <div class="bubble-bottom">
+            <div class="bubble-author">
+              <span class="bubble-author-avatar">🐢</span> 匿名海龟
+            </div>
+            <div class="bubble-stats">
+              <span class="bubble-stat">❤️ 203</span>
+              <span class="bubble-stat">💬 67</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bubble 5: Q&A style -->
+      <div class="bubble" style="background: var(--b4);">
+        <div class="bubble-overlay">
+          <button class="bubble-overlay-btn">❤️</button>
+          <button class="bubble-overlay-btn">⭐</button>
+        </div>
+        <div class="bubble-inner">
+          <span class="bubble-tag-label">🆘 求助</span>
+          <div class="bubble-content">大三了，考研还是直接就业？计算机专业，绩点3.2，有没有过来人分享下经验？真的很迷茫...</div>
+          <div class="bubble-bottom">
+            <div class="bubble-author">
+              <span class="bubble-author-avatar">🦊</span> 匿名狐狸
+            </div>
+            <div class="bubble-stats">
+              <span class="bubble-stat">❤️ 86</span>
+              <span class="bubble-stat">💬 92</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bubble 6 -->
+      <div class="bubble compact" style="background: var(--b6);">
+        <div class="bubble-overlay">
+          <button class="bubble-overlay-btn">❤️</button>
+          <button class="bubble-overlay-btn">⭐</button>
+        </div>
+        <div class="bubble-inner">
+          <span class="bubble-tag-label">🔍 失物招领</span>
+          <div class="bubble-content">B栋302捡到蓝色保温杯，上面有小熊贴纸，失主来领！</div>
+          <div class="bubble-bottom">
+            <div class="bubble-author">
+              <span class="bubble-author-avatar">🐸</span> 匿名青蛙
+            </div>
+            <div class="bubble-stats">
+              <span class="bubble-stat">❤️ 5</span>
+              <span class="bubble-stat">💬 3</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bubble 7 -->
+      <div class="bubble" style="background: var(--b8);">
+        <div class="bubble-overlay">
+          <button class="bubble-overlay-btn">❤️</button>
+          <button class="bubble-overlay-btn">⭐</button>
+        </div>
+        <div class="bubble-inner">
+          <span class="bubble-tag-label">🕳️ 树洞</span>
+          <div class="bubble-content">凌晨三点还在写论文，窗外的月亮很圆。突然觉得这四年过得好快，下个月就要毕业了。舍不得这个城市，舍不得这些人。</div>
+          <div class="bubble-bottom">
+            <div class="bubble-author">
+              <span class="bubble-author-avatar">🦉</span> 匿名猫头鹰
+            </div>
+            <div class="bubble-stats">
+              <span class="bubble-stat">❤️ 312</span>
+              <span class="bubble-stat">💬 89</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bubble 8 -->
+      <div class="bubble" style="background: var(--b1);">
+        <div class="bubble-overlay">
+          <button class="bubble-overlay-btn">❤️</button>
+          <button class="bubble-overlay-btn">⭐</button>
+        </div>
+        <div class="bubble-inner">
+          <span class="bubble-tag-label">💌 表白</span>
+          <div class="bubble-content">学长，你教我高数的那个下午，阳光刚好照在你的侧脸上，我就知道完了。</div>
+          <div class="bubble-bottom">
+            <div class="bubble-author">
+              <span class="bubble-author-avatar">🐧</span> 匿名企鹅
+            </div>
+            <div class="bubble-stats">
+              <span class="bubble-stat">❤️ 267</span>
+              <span class="bubble-stat">💬 54</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bubble 9: with image -->
+      <div class="bubble has-image" style="background: var(--b5);">
+        <div class="bubble-overlay">
+          <button class="bubble-overlay-btn">❤️</button>
+          <button class="bubble-overlay-btn">⭐</button>
+        </div>
+        <div class="bubble-image" style="height: 240px; background: linear-gradient(180deg, rgba(232,222,255,0.3), rgba(220,208,252,0.6)); display: flex; align-items: center; justify-content: center; color: var(--text-3); font-size: 40px;">📷</div>
+        <div class="bubble-inner">
+          <span class="bubble-tag-label">💌 表白</span>
+          <div class="bubble-content">感谢雨天借伞的男生，你的校园卡掉了，上面写着机械学院的。我想还给你！</div>
+          <div class="bubble-bottom">
+            <div class="bubble-author">
+              <span class="bubble-author-avatar">🦄</span> 匿名独角兽
+            </div>
+            <div class="bubble-stats">
+              <span class="bubble-stat">❤️ 89</span>
+              <span class="bubble-stat">💬 56</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bubble 10 -->
+      <div class="bubble" style="background: var(--b7);">
+        <div class="bubble-overlay">
+          <button class="bubble-overlay-btn">❤️</button>
+          <button class="bubble-overlay-btn">⭐</button>
+        </div>
+        <div class="bubble-inner">
+          <span class="bubble-tag-label">😤 吐槽</span>
+          <div class="bubble-content">选课系统又崩了！！！每次都是这样，几千人同时抢课，服务器撑不住。都2026年了能不能升级！</div>
+          <div class="bubble-bottom">
+            <div class="bubble-author">
+              <span class="bubble-author-avatar">🐰</span> 匿名兔子
+            </div>
+            <div class="bubble-stats">
+              <span class="bubble-stat">❤️ 445</span>
+              <span class="bubble-stat">💬 132</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bubble 11 -->
+      <div class="bubble" style="background: var(--b3);">
+        <div class="bubble-overlay">
+          <button class="bubble-overlay-btn">❤️</button>
+          <button class="bubble-overlay-btn">⭐</button>
+        </div>
+        <div class="bubble-inner">
+          <span class="bubble-tag-label">🕳️ 树洞</span>
+          <div class="bubble-content">今天和妈妈打了一个很长的电话，她说家里的桂花树开花了，香味飘到了二楼。突然很想家。</div>
+          <div class="bubble-bottom">
+            <div class="bubble-author">
+              <span class="bubble-author-avatar">🦋</span> 匿名蝴蝶
+            </div>
+            <div class="bubble-stats">
+              <span class="bubble-stat">❤️ 178</span>
+              <span class="bubble-stat">💬 42</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bubble 12 -->
+      <div class="bubble compact" style="background: var(--b4);">
+        <div class="bubble-overlay">
+          <button class="bubble-overlay-btn">❤️</button>
+          <button class="bubble-overlay-btn">⭐</button>
+        </div>
+        <div class="bubble-inner">
+          <span class="bubble-tag-label">🆘 求助</span>
+          <div class="bubble-content">学校附近哪家打印店便宜？论文80页，太贵了...</div>
+          <div class="bubble-bottom">
+            <div class="bubble-author">
+              <span class="bubble-author-avatar">🐶</span> 匿名柴犬
+            </div>
+            <div class="bubble-stats">
+              <span class="bubble-stat">❤️ 18</span>
+              <span class="bubble-stat">💬 24</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bubble 13: with image -->
+      <div class="bubble has-image" style="background: var(--b6);">
+        <div class="bubble-overlay">
+          <button class="bubble-overlay-btn">❤️</button>
+          <button class="bubble-overlay-btn">⭐</button>
+        </div>
+        <div class="bubble-image" style="height: 180px; background: linear-gradient(180deg, rgba(255,249,196,0.3), rgba(255,241,118,0.4)); display: flex; align-items: center; justify-content: center; color: var(--text-3); font-size: 40px;">📷</div>
+        <div class="bubble-inner">
+          <span class="bubble-tag-label">🤝 搭子</span>
+          <div class="bubble-content">拍到了今天的晚霞！有一起摄影的搭子吗？</div>
+          <div class="bubble-bottom">
+            <div class="bubble-author">
+              <span class="bubble-author-avatar">🦜</span> 匿名鹦鹉
+            </div>
+            <div class="bubble-stats">
+              <span class="bubble-stat">❤️ 67</span>
+              <span class="bubble-stat">💬 15</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bubble 14 -->
+      <div class="bubble" style="background: var(--b2);">
+        <div class="bubble-overlay">
+          <button class="bubble-overlay-btn">❤️</button>
+          <button class="bubble-overlay-btn">⭐</button>
+        </div>
+        <div class="bubble-inner">
+          <span class="bubble-tag-label">😤 吐槽</span>
+          <div class="bubble-content">室友每天凌晨两点才回来，开门声巨大，我被吵醒无数次了。说了也不改，崩溃。有没有什么隔音好的耳塞推荐？</div>
+          <div class="bubble-bottom">
+            <div class="bubble-author">
+              <span class="bubble-author-avatar">🐨</span> 匿名考拉
+            </div>
+            <div class="bubble-stats">
+              <span class="bubble-stat">❤️ 94</span>
+              <span class="bubble-stat">💬 67</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bubble 15 -->
+      <div class="bubble" style="background: var(--b1);">
+        <div class="bubble-overlay">
+          <button class="bubble-overlay-btn">❤️</button>
+          <button class="bubble-overlay-btn">⭐</button>
+        </div>
+        <div class="bubble-inner">
+          <span class="bubble-tag-label">💌 表白</span>
+          <div class="bubble-content">每天早上八点的高数课，我都会特意走你那条路。虽然可能你根本没注意到我。</div>
+          <div class="bubble-bottom">
+            <div class="bubble-author">
+              <span class="bubble-author-avatar">🐑</span> 匿名绵羊
+            </div>
+            <div class="bubble-stats">
+              <span class="bubble-stat">❤️ 156</span>
+              <span class="bubble-stat">💬 38</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- FAB -->
+<button class="fab">+</button>
+
+<script>
+  // Sidebar item click
+  document.querySelectorAll('.sidebar-item').forEach(item => {
+    item.addEventListener('click', () => {
+      document.querySelectorAll('.sidebar-item').forEach(x => x.classList.remove('active'));
+      item.classList.add('active');
+    });
+  });
+  // Tag click
+  document.querySelectorAll('.topbar-tag').forEach(t => {
+    t.addEventListener('click', () => {
+      document.querySelectorAll('.topbar-tag').forEach(x => x.classList.remove('active'));
+      t.classList.add('active');
+    });
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>消息中心 B — 分栏视图</title>
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg: #0B0D1A;
+    --bg-surface: #12152A;
+    --bg-glass: rgba(18,21,42,0.65);
+    --text-1: #E8E6F0;
+    --text-2: #9896A8;
+    --text-3: #5D5B6E;
+    --brand: #7C5CFC;
+    --brand-glow: rgba(124,92,252,0.25);
+    --brand-dim: rgba(124,92,252,0.08);
+    --pink: #FF6B9D;
+    --cyan: #06D6A0;
+    --orange: #FF9F43;
+    --border: rgba(255,255,255,0.08);
+    --radius-card: 24px;
+    --radius-pill: 999px;
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Noto Sans SC', sans-serif;
+  }
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text-1);
+    line-height: 1.6;
+    min-height: 100vh;
+    overflow: hidden;
+  }
+
+  /* ===== STARS ===== */
+  .stars { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+  .star {
+    position: absolute; border-radius: 50%; background: #fff;
+    animation: twinkle var(--dur, 3s) ease-in-out infinite alternate;
+  }
+  @keyframes twinkle { 0% { opacity: 0.12; } 100% { opacity: 0.65; } }
+  .nebula { position: fixed; border-radius: 50%; filter: blur(120px); pointer-events: none; z-index: 0; }
+  .nebula-1 { width: 500px; height: 500px; top: -120px; left: 20%; background: rgba(124,92,252,0.1); }
+  .nebula-2 { width: 400px; height: 400px; bottom: 5%; right: 5%; background: rgba(6,214,160,0.08); }
+  .nebula-3 { width: 300px; height: 300px; top: 50%; left: -8%; background: rgba(255,107,157,0.06); }
+
+  /* ===== NAV ===== */
+  .nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    height: 64px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 48px;
+    background: rgba(11,13,26,0.72);
+    backdrop-filter: blur(24px) saturate(1.5);
+    -webkit-backdrop-filter: blur(24px) saturate(1.5);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-left { display: flex; align-items: center; gap: 16px; }
+  .nav-back {
+    width: 36px; height: 36px; border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.04);
+    color: var(--text-2); font-size: 18px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+  .nav-back:hover { background: rgba(255,255,255,0.1); color: var(--text-1); }
+  .nav-logo {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 18px; font-weight: 700; color: var(--brand);
+    text-decoration: none;
+  }
+  .nav-logo span { font-size: 20px; }
+  .nav-title { font-size: 16px; font-weight: 600; color: var(--text-1); }
+  .nav-right { display: flex; align-items: center; gap: 16px; }
+  .nav-bell {
+    position: relative; width: 40px; height: 40px; border-radius: 50%;
+    border: 1px solid var(--border); background: rgba(255,255,255,0.04);
+    color: var(--text-2); font-size: 18px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+  .nav-bell:hover { background: rgba(255,255,255,0.08); color: var(--text-1); }
+  .nav-bell .badge {
+    position: absolute; top: 4px; right: 4px;
+    width: 18px; height: 18px; border-radius: 50%;
+    background: var(--pink); color: #fff; font-size: 10px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    border: 2px solid var(--bg);
+  }
+
+  /* ===== SPLIT LAYOUT ===== */
+  .split-container {
+    position: fixed; top: 64px; left: 0; right: 0; bottom: 0;
+    display: flex; z-index: 1;
+  }
+
+  /* Left Panel */
+  .left-panel {
+    width: 320px; flex-shrink: 0;
+    background: rgba(11,13,26,0.5);
+    backdrop-filter: blur(8px);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  .left-header {
+    padding: 16px; display: flex; flex-direction: column; gap: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .left-tabs {
+    display: flex; gap: 4px;
+    background: rgba(255,255,255,0.04);
+    border-radius: var(--radius-pill);
+    padding: 3px;
+  }
+  .left-tab {
+    flex: 1; padding: 7px 0; border-radius: var(--radius-pill);
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    color: var(--text-2); background: transparent;
+    border: none; text-align: center;
+    transition: all 0.25s;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .left-tab.active {
+    background: var(--brand); color: #fff;
+    box-shadow: 0 4px 16px rgba(124,92,252,0.35);
+  }
+  .left-tab .cnt {
+    min-width: 18px; height: 18px; border-radius: 9px;
+    background: var(--pink); color: #fff;
+    font-size: 10px; font-weight: 700; padding: 0 5px;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .left-tab.active .cnt { background: rgba(255,255,255,0.25); }
+  .mark-all-btn {
+    font-size: 12px; color: var(--text-3); background: none; border: none;
+    cursor: pointer; text-align: right; padding: 0;
+    transition: color 0.2s;
+  }
+  .mark-all-btn:hover { color: var(--brand); }
+
+  .left-scroll {
+    flex: 1; overflow-y: auto; overflow-x: hidden;
+  }
+
+  /* Notification rows (left panel) */
+  .lp-notif {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 12px 16px; cursor: pointer;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    transition: all 0.15s; position: relative;
+  }
+  .lp-notif:hover { background: rgba(255,255,255,0.04); }
+  .lp-notif.active { background: var(--brand-dim); border-left: 3px solid var(--brand); }
+  .lp-notif.unread::after {
+    content: ''; position: absolute; top: 18px; right: 14px;
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--brand);
+    box-shadow: 0 0 6px var(--brand-glow);
+  }
+  .lp-icon {
+    width: 34px; height: 34px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; flex-shrink: 0;
+  }
+  .lp-icon.comment { background: rgba(124,92,252,0.15); }
+  .lp-icon.like { background: rgba(255,107,157,0.15); }
+  .lp-icon.report { background: rgba(255,159,67,0.15); }
+  .lp-icon.system { background: rgba(6,214,160,0.15); }
+  .lp-text { font-size: 13px; color: var(--text-1); line-height: 1.4; flex: 1; min-width: 0; }
+  .lp-text strong { font-weight: 600; }
+  .lp-text .time { display: block; font-size: 11px; color: var(--text-3); margin-top: 3px; }
+
+  /* PM rows (left panel) */
+  .lp-pm {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 16px; cursor: pointer;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    transition: all 0.15s;
+  }
+  .lp-pm:hover { background: rgba(255,255,255,0.04); }
+  .lp-pm.active { background: var(--brand-dim); border-left: 3px solid var(--brand); }
+  .lp-pm-avatar {
+    width: 38px; height: 38px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0;
+    border: 1px solid var(--border);
+  }
+  .lp-pm-avatar.a1 { background: linear-gradient(135deg, rgba(124,92,252,0.2), rgba(124,92,252,0.1)); }
+  .lp-pm-avatar.a2 { background: linear-gradient(135deg, rgba(255,107,157,0.2), rgba(255,107,157,0.1)); }
+  .lp-pm-avatar.a3 { background: linear-gradient(135deg, rgba(6,214,160,0.2), rgba(6,214,160,0.1)); }
+  .lp-pm-body { flex: 1; min-width: 0; }
+  .lp-pm-row { display: flex; align-items: center; justify-content: space-between; }
+  .lp-pm-name { font-size: 13px; font-weight: 600; color: var(--text-1); }
+  .lp-pm-time { font-size: 11px; color: var(--text-3); }
+  .lp-pm-preview {
+    font-size: 12px; color: var(--text-2); margin-top: 2px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .lp-pm-badge {
+    min-width: 20px; height: 20px; border-radius: 10px;
+    background: var(--brand); color: #fff;
+    font-size: 10px; font-weight: 700; padding: 0 5px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .left-section-hidden { display: none; }
+
+  /* ===== RIGHT PANEL ===== */
+  .right-panel {
+    flex: 1; display: flex; flex-direction: column;
+    overflow: hidden; position: relative;
+  }
+
+  /* Right panel: notification detail */
+  .detail-notif {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 40px;
+  }
+  .detail-notif .post-bubble {
+    max-width: 480px; width: 100%;
+    background: var(--bg-glass);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    padding: 28px;
+  }
+  .post-bubble-header {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
+  }
+  .post-bubble-avatar {
+    width: 38px; height: 38px; border-radius: 50%;
+    background: linear-gradient(135deg, rgba(124,92,252,0.2), rgba(124,92,252,0.1));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; border: 1px solid var(--border);
+  }
+  .post-bubble-name { font-size: 14px; font-weight: 600; color: var(--text-1); }
+  .post-bubble-time { font-size: 12px; color: var(--text-3); }
+  .post-bubble-content { font-size: 15px; color: var(--text-1); line-height: 1.6; margin-bottom: 16px; }
+  .post-bubble-footer { display: flex; gap: 12px; }
+  .post-action-btn {
+    padding: 8px 18px; border-radius: var(--radius-pill);
+    font-size: 13px; font-weight: 500; cursor: pointer;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.04);
+    color: var(--text-2); transition: all 0.2s;
+  }
+  .post-action-btn:hover { background: rgba(255,255,255,0.08); color: var(--text-1); }
+  .post-action-btn.primary {
+    background: var(--brand); border-color: var(--brand);
+    color: #fff;
+  }
+  .post-action-btn.primary:hover { background: #6B4AE8; }
+  .detail-notif-meta {
+    margin-top: 20px; font-size: 13px; color: var(--text-2);
+    display: flex; align-items: center; gap: 6px;
+  }
+
+  /* Right panel: chat view */
+  .detail-chat {
+    display: none; flex-direction: column; flex: 1; overflow: hidden;
+  }
+  .detail-chat.active { display: flex; }
+  .chat-topbar {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .chat-topbar-left { display: flex; align-items: center; gap: 10px; }
+  .chat-topbar-avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; border: 1px solid var(--border);
+  }
+  .chat-topbar-avatar.a1 { background: linear-gradient(135deg, rgba(124,92,252,0.2), rgba(124,92,252,0.1)); }
+  .chat-topbar-avatar.a2 { background: linear-gradient(135deg, rgba(255,107,157,0.2), rgba(255,107,157,0.1)); }
+  .chat-topbar-avatar.a3 { background: linear-gradient(135deg, rgba(6,214,160,0.2), rgba(6,214,160,0.1)); }
+  .chat-topbar-name { font-size: 15px; font-weight: 600; color: var(--text-1); }
+  .chat-post-ref {
+    font-size: 12px; color: var(--text-3);
+    text-decoration: none; transition: color 0.2s;
+  }
+  .chat-post-ref:hover { color: var(--cyan); }
+
+  .chat-messages {
+    flex: 1; overflow-y: auto; padding: 24px;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .chat-time-group {
+    text-align: center; font-size: 11px; color: var(--text-3);
+    padding: 8px 0;
+  }
+  .chat-msg {
+    max-width: 65%; padding: 12px 16px; font-size: 14px; line-height: 1.5;
+    border-radius: 18px; animation: msgIn 0.25s ease;
+  }
+  @keyframes msgIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .chat-msg.them {
+    align-self: flex-start;
+    background: var(--bg-glass);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--border);
+    color: var(--text-1);
+    border-bottom-left-radius: 6px;
+  }
+  .chat-msg.me {
+    align-self: flex-end;
+    background: linear-gradient(135deg, var(--brand), #9B7DFF);
+    color: #fff;
+    border-bottom-right-radius: 6px;
+  }
+
+  .chat-input-area {
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+    display: flex; gap: 12px; align-items: flex-end;
+  }
+  .chat-textarea-wrap { flex: 1; position: relative; }
+  .chat-textarea {
+    width: 100%; padding: 12px 16px; padding-right: 60px;
+    border-radius: 20px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    color: var(--text-1); font-size: 14px; font-family: var(--font);
+    resize: none; outline: none; min-height: 44px; max-height: 120px;
+    transition: border-color 0.2s;
+  }
+  .chat-textarea:focus { border-color: rgba(124,92,252,0.4); }
+  .chat-textarea::placeholder { color: var(--text-3); }
+  .char-count {
+    position: absolute; right: 16px; bottom: 12px;
+    font-size: 11px; color: var(--text-3);
+  }
+  .char-count.warn { color: var(--orange); }
+  .char-count.over { color: var(--pink); }
+  .chat-send {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: var(--brand); border: none;
+    color: #fff; font-size: 20px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s; flex-shrink: 0;
+  }
+  .chat-send:hover { background: #6B4AE8; transform: scale(1.05); }
+
+  /* Empty placeholder */
+  .right-empty {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    color: var(--text-3);
+  }
+  .right-empty .emoji { font-size: 48px; margin-bottom: 16px; }
+  .right-empty .text { font-size: 15px; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+  /* ===== MOBILE ===== */
+  .mobile-back {
+    display: none; width: 36px; height: 36px; border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.04);
+    color: var(--text-2); font-size: 16px; cursor: pointer;
+    align-items: center; justify-content: center;
+    transition: all 0.2s; margin-right: 8px;
+  }
+  .mobile-back:hover { background: rgba(255,255,255,0.1); color: var(--text-1); }
+
+  @media (max-width: 768px) {
+    .nav { padding: 0 16px; }
+    .left-panel { width: 100%; }
+    .right-panel { display: none; position: absolute; inset: 0; background: var(--bg); z-index: 10; }
+    .right-panel.mobile-show { display: flex; }
+    .mobile-back { display: flex; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Background -->
+<div class="stars" id="stars"></div>
+<div class="nebula nebula-1"></div>
+<div class="nebula nebula-2"></div>
+<div class="nebula nebula-3"></div>
+
+<!-- Nav -->
+<nav class="nav">
+  <div class="nav-left">
+    <button class="nav-back" title="返回">←</button>
+    <a class="nav-logo" href="#"><span>🌌</span> 匿名星球</a>
+    <span class="nav-title">消息中心</span>
+  </div>
+  <div class="nav-right">
+    <button class="nav-bell">
+      🔔
+      <span class="badge">5</span>
+    </button>
+  </div>
+</nav>
+
+<!-- Split layout -->
+<div class="split-container">
+  <!-- Left Panel -->
+  <div class="left-panel">
+    <div class="left-header">
+      <div class="left-tabs">
+        <button class="left-tab active" data-section="notif">通知 <span class="cnt">3</span></button>
+        <button class="left-tab" data-section="pm">私信 <span class="cnt">2</span></button>
+      </div>
+      <button class="mark-all-btn">✓ 全部标为已读</button>
+    </div>
+    <div class="left-scroll">
+      <!-- Notification rows -->
+      <div id="leftNotifs">
+        <div class="lp-notif unread active" data-type="notif" data-detail="n1">
+          <div class="lp-icon comment">💬</div>
+          <div class="lp-text">
+            <strong>匿名银河旅人</strong> 评论了你的帖子
+            <span class="time">3 分钟前</span>
+          </div>
+        </div>
+        <div class="lp-notif unread" data-type="notif" data-detail="n2">
+          <div class="lp-icon like">❤️</div>
+          <div class="lp-text">
+            <strong>匿名星尘漫步者</strong> 等 12 人赞了你的帖子
+            <span class="time">15 分钟前</span>
+          </div>
+        </div>
+        <div class="lp-notif unread" data-type="notif" data-detail="n3">
+          <div class="lp-icon comment">💬</div>
+          <div class="lp-text">
+            <strong>匿名宇宙猫</strong> 回复了你的评论
+            <span class="time">28 分钟前</span>
+          </div>
+        </div>
+        <div class="lp-notif" data-type="notif" data-detail="n4">
+          <div class="lp-icon system">📢</div>
+          <div class="lp-text">
+            投票「大家觉得远程办公好吗」已结束
+            <span class="time">2 小时前</span>
+          </div>
+        </div>
+        <div class="lp-notif" data-type="notif" data-detail="n5">
+          <div class="lp-icon report">⚠️</div>
+          <div class="lp-text">
+            你的举报已处理完毕
+            <span class="time">5 小时前</span>
+          </div>
+        </div>
+        <div class="lp-notif" data-type="notif" data-detail="n6">
+          <div class="lp-icon like">❤️</div>
+          <div class="lp-text">
+            <strong>匿名极光猎人</strong> 赞了你的评论
+            <span class="time">昨天 22:15</span>
+          </div>
+        </div>
+        <div class="lp-notif" data-type="notif" data-detail="n7">
+          <div class="lp-icon system">📢</div>
+          <div class="lp-text">
+            你的帖子因违反社区规范已被下架
+            <span class="time">昨天 18:30</span>
+          </div>
+        </div>
+        <div class="lp-notif" data-type="notif" data-detail="n8">
+          <div class="lp-icon report">⚠️</div>
+          <div class="lp-text">
+            你的账号已被临时禁言 24 小时
+            <span class="time">昨天 18:28</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- PM rows -->
+      <div id="leftPMs" class="left-section-hidden">
+        <div class="lp-pm active" data-type="pm" data-detail="pm1">
+          <div class="lp-pm-avatar a1">🌙</div>
+          <div class="lp-pm-body">
+            <div class="lp-pm-row">
+              <span class="lp-pm-name">匿名月光旅人</span>
+              <span class="lp-pm-time">5 分钟前</span>
+            </div>
+            <div class="lp-pm-preview">谢谢你的分享，我最近也经历了类似的事情...</div>
+          </div>
+          <span class="lp-pm-badge">2</span>
+        </div>
+        <div class="lp-pm" data-type="pm" data-detail="pm2">
+          <div class="lp-pm-avatar a2">⭐</div>
+          <div class="lp-pm-body">
+            <div class="lp-pm-row">
+              <span class="lp-pm-name">匿名星光收集者</span>
+              <span class="lp-pm-time">1 小时前</span>
+            </div>
+            <div class="lp-pm-preview">远程办公那个投票我选了支持！你的观点很棒</div>
+          </div>
+          <span class="lp-pm-badge">1</span>
+        </div>
+        <div class="lp-pm" data-type="pm" data-detail="pm3">
+          <div class="lp-pm-avatar a3">🌿</div>
+          <div class="lp-pm-body">
+            <div class="lp-pm-row">
+              <span class="lp-pm-name">匿名森林守望者</span>
+              <span class="lp-pm-time">昨天</span>
+            </div>
+            <div class="lp-pm-preview">好的，下次有机会再聊！</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Panel -->
+  <div class="right-panel" id="rightPanel">
+    <!-- Notification Detail Views -->
+    <div class="detail-notif" id="detail-n1" style="display:flex">
+      <div class="post-bubble">
+        <div class="post-bubble-header">
+          <div class="post-bubble-avatar">🌌</div>
+          <div>
+            <div class="post-bubble-name">匿名深空探索者（你）</div>
+            <div class="post-bubble-time">今天 23:30</div>
+          </div>
+        </div>
+        <div class="post-bubble-content">深夜emo的时候你会做什么？我通常会听歌或者出去走走，不知道大家有什么好方法...</div>
+        <div class="post-bubble-footer">
+          <button class="post-action-btn primary">查看帖子</button>
+          <button class="post-action-btn">查看评论</button>
+        </div>
+      </div>
+      <div class="detail-notif-meta">💬 匿名银河旅人 在 3 分钟前 发表了评论</div>
+    </div>
+
+    <div class="detail-notif" id="detail-n2" style="display:none">
+      <div class="post-bubble">
+        <div class="post-bubble-header">
+          <div class="post-bubble-avatar">🌌</div>
+          <div>
+            <div class="post-bubble-name">匿名深空探索者（你）</div>
+            <div class="post-bubble-time">今天 20:15</div>
+          </div>
+        </div>
+        <div class="post-bubble-content">今天在公司偷偷哭了，觉得自己好脆弱。但又不想让同事看到...</div>
+        <div class="post-bubble-footer">
+          <button class="post-action-btn primary">查看帖子</button>
+          <button class="post-action-btn">查看 12 个赞</button>
+        </div>
+      </div>
+      <div class="detail-notif-meta">❤️ 匿名星尘漫步者 等 12 人赞了这篇帖子</div>
+    </div>
+
+    <div class="detail-notif" id="detail-n3" style="display:none">
+      <div class="post-bubble">
+        <div class="post-bubble-header">
+          <div class="post-bubble-avatar">🌌</div>
+          <div>
+            <div class="post-bubble-name">匿名深空探索者（你）</div>
+            <div class="post-bubble-time">今天 23:00</div>
+          </div>
+        </div>
+        <div class="post-bubble-content">你的评论: "有时候一个人待着反而更舒服"</div>
+        <div class="post-bubble-footer">
+          <button class="post-action-btn primary">查看回复</button>
+        </div>
+      </div>
+      <div class="detail-notif-meta">💬 匿名宇宙猫 回复: "我也是，抱抱你！"</div>
+    </div>
+
+    <div class="detail-notif" id="detail-n4" style="display:none">
+      <div class="post-bubble">
+        <div class="post-bubble-header">
+          <div class="post-bubble-avatar">🌌</div>
+          <div>
+            <div class="post-bubble-name">匿名深空探索者（你）</div>
+            <div class="post-bubble-time">昨天 14:00</div>
+          </div>
+        </div>
+        <div class="post-bubble-content">大家觉得远程办公好吗？</div>
+        <div class="post-bubble-footer">
+          <button class="post-action-btn primary">查看投票结果</button>
+        </div>
+      </div>
+      <div class="detail-notif-meta">📢 投票已结束，共收到 89 票</div>
+    </div>
+
+    <div class="detail-notif" id="detail-n5" style="display:none">
+      <div class="post-bubble">
+        <div class="post-bubble-header">
+          <div class="post-bubble-avatar">⚠️</div>
+          <div>
+            <div class="post-bubble-name">系统通知</div>
+            <div class="post-bubble-time">今天 18:45</div>
+          </div>
+        </div>
+        <div class="post-bubble-content">你的举报已处理完毕，违规内容已被移除。感谢你帮助维护社区环境。</div>
+        <div class="post-bubble-footer">
+          <button class="post-action-btn">知道了</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="detail-notif" id="detail-n6" style="display:none">
+      <div class="post-bubble">
+        <div class="post-bubble-header">
+          <div class="post-bubble-avatar">🌌</div>
+          <div>
+            <div class="post-bubble-name">匿名深空探索者（你）</div>
+            <div class="post-bubble-time">昨天 21:00</div>
+          </div>
+        </div>
+        <div class="post-bubble-content">你的评论被赞了</div>
+        <div class="post-bubble-footer">
+          <button class="post-action-btn primary">查看评论</button>
+        </div>
+      </div>
+      <div class="detail-notif-meta">❤️ 匿名极光猎人 赞了你的评论</div>
+    </div>
+
+    <div class="detail-notif" id="detail-n7" style="display:none">
+      <div class="post-bubble">
+        <div class="post-bubble-header">
+          <div class="post-bubble-avatar">📢</div>
+          <div>
+            <div class="post-bubble-name">系统通知</div>
+            <div class="post-bubble-time">昨天 18:30</div>
+          </div>
+        </div>
+        <div class="post-bubble-content">你的帖子「某些不当言论」因违反社区规范已被下架。如有疑问，请联系管理员。</div>
+        <div class="post-bubble-footer">
+          <button class="post-action-btn">了解详情</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="detail-notif" id="detail-n8" style="display:none">
+      <div class="post-bubble">
+        <div class="post-bubble-header">
+          <div class="post-bubble-avatar">⚠️</div>
+          <div>
+            <div class="post-bubble-name">系统通知</div>
+            <div class="post-bubble-time">昨天 18:28</div>
+          </div>
+        </div>
+        <div class="post-bubble-content">你的账号已被临时禁言 24 小时。请遵守社区规范，共建友好交流环境。</div>
+        <div class="post-bubble-footer">
+          <button class="post-action-btn">查看社区规范</button>
+          <button class="post-action-btn">联系管理员</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chat Views -->
+    <div class="detail-chat" id="detail-pm1">
+      <div class="chat-topbar">
+        <div class="chat-topbar-left">
+          <button class="mobile-back" onclick="closeMobileDetail()">←</button>
+          <div class="chat-topbar-avatar a1">🌙</div>
+          <div>
+            <div class="chat-topbar-name">匿名月光旅人</div>
+            <a class="chat-post-ref" href="#">来自帖子: 「深夜emo的时候你会做什么」</a>
+          </div>
+        </div>
+      </div>
+      <div class="chat-messages">
+        <div class="chat-time-group">今天 23:40</div>
+        <div class="chat-msg them">你好，看到你的帖子很有感触，我也是经常深夜emo</div>
+        <div class="chat-msg me">谢谢你的私信！能遇到有共鸣的人真好</div>
+        <div class="chat-time-group">今天 23:52</div>
+        <div class="chat-msg them">谢谢你的分享，我最近也经历了类似的事情，有时候觉得只有在匿名的地方才能说出真心话</div>
+      </div>
+      <div class="chat-input-area">
+        <div class="chat-textarea-wrap">
+          <textarea class="chat-textarea" placeholder="输入消息..." rows="1" maxlength="300"></textarea>
+          <span class="char-count">0/300</span>
+        </div>
+        <button class="chat-send">↑</button>
+      </div>
+    </div>
+
+    <div class="detail-chat" id="detail-pm2">
+      <div class="chat-topbar">
+        <div class="chat-topbar-left">
+          <button class="mobile-back" onclick="closeMobileDetail()">←</button>
+          <div class="chat-topbar-avatar a2">⭐</div>
+          <div>
+            <div class="chat-topbar-name">匿名星光收集者</div>
+            <a class="chat-post-ref" href="#">来自帖子: 「大家觉得远程办公好吗」</a>
+          </div>
+        </div>
+      </div>
+      <div class="chat-messages">
+        <div class="chat-time-group">今天 22:30</div>
+        <div class="chat-msg them">远程办公那个投票我选了支持！你的观点很棒</div>
+      </div>
+      <div class="chat-input-area">
+        <div class="chat-textarea-wrap">
+          <textarea class="chat-textarea" placeholder="输入消息..." rows="1" maxlength="300"></textarea>
+          <span class="char-count">0/300</span>
+        </div>
+        <button class="chat-send">↑</button>
+      </div>
+    </div>
+
+    <div class="detail-chat" id="detail-pm3">
+      <div class="chat-topbar">
+        <div class="chat-topbar-left">
+          <button class="mobile-back" onclick="closeMobileDetail()">←</button>
+          <div class="chat-topbar-avatar a3">🌿</div>
+          <div>
+            <div class="chat-topbar-name">匿名森林守望者</div>
+            <a class="chat-post-ref" href="#">来自帖子: 「今天在公司偷偷哭了」</a>
+          </div>
+        </div>
+      </div>
+      <div class="chat-messages">
+        <div class="chat-time-group">昨天 20:10</div>
+        <div class="chat-msg them">看到你的帖子，想告诉你，一切都会好起来的</div>
+        <div class="chat-msg me">谢谢你的温暖，真的很感动</div>
+        <div class="chat-msg them">好的，下次有机会再聊！</div>
+      </div>
+      <div class="chat-input-area">
+        <div class="chat-textarea-wrap">
+          <textarea class="chat-textarea" placeholder="输入消息..." rows="1" maxlength="300"></textarea>
+          <span class="char-count">0/300</span>
+        </div>
+        <button class="chat-send">↑</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Stars
+  (function() {
+    const c = document.getElementById('stars');
+    for (let i = 0; i < 120; i++) {
+      const s = document.createElement('div');
+      s.className = 'star';
+      const size = Math.random() * 2.5 + 0.5;
+      s.style.cssText = `width:${size}px;height:${size}px;top:${Math.random()*100}%;left:${Math.random()*100}%;--dur:${2+Math.random()*4}s;animation-delay:${Math.random()*3}s;`;
+      c.appendChild(s);
+    }
+  })();
+
+  // Tab switching (left panel)
+  const leftTabs = document.querySelectorAll('.left-tab');
+  const leftNotifs = document.getElementById('leftNotifs');
+  const leftPMs = document.getElementById('leftPMs');
+
+  leftTabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      leftTabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      const sec = tab.dataset.section;
+      if (sec === 'notif') {
+        leftNotifs.classList.remove('left-section-hidden');
+        leftPMs.classList.add('left-section-hidden');
+        showDetail('n1', 'notif');
+      } else {
+        leftNotifs.classList.add('left-section-hidden');
+        leftPMs.classList.remove('left-section-hidden');
+        showDetail('pm1', 'pm');
+      }
+    });
+  });
+
+  function hideAllDetails() {
+    document.querySelectorAll('.detail-notif, .detail-chat').forEach(d => {
+      d.style.display = 'none';
+      d.classList.remove('active');
+    });
+  }
+
+  function showDetail(id, type) {
+    hideAllDetails();
+    const el = document.getElementById('detail-' + id);
+    if (el) {
+      if (type === 'pm') {
+        el.style.display = 'flex';
+        el.classList.add('active');
+      } else {
+        el.style.display = 'flex';
+      }
+    }
+    // Update active state in left panel
+    document.querySelectorAll('.lp-notif, .lp-pm').forEach(r => r.classList.remove('active'));
+    const row = document.querySelector(`[data-detail="${id}"]`);
+    if (row) {
+      row.classList.remove('unread');
+      row.classList.add('active');
+    }
+    // Mobile
+    const rp = document.getElementById('rightPanel');
+    if (window.innerWidth <= 768) {
+      rp.classList.add('mobile-show');
+    }
+  }
+
+  // Click handlers for left panel items
+  document.querySelectorAll('.lp-notif').forEach(item => {
+    item.addEventListener('click', () => showDetail(item.dataset.detail, 'notif'));
+  });
+  document.querySelectorAll('.lp-pm').forEach(item => {
+    item.addEventListener('click', () => showDetail(item.dataset.detail, 'pm'));
+  });
+
+  // Mobile back
+  function closeMobileDetail() {
+    document.getElementById('rightPanel').classList.remove('mobile-show');
+  }
+
+  // Char counter
+  document.querySelectorAll('.chat-textarea').forEach(ta => {
+    const counter = ta.closest('.chat-textarea-wrap').querySelector('.char-count');
+    ta.addEventListener('input', () => {
+      const len = ta.value.length;
+      counter.textContent = len + '/300';
+      counter.classList.toggle('warn', len > 250);
+      counter.classList.toggle('over', len >= 300);
+      ta.style.height = 'auto';
+      ta.style.height = Math.min(ta.scrollHeight, 120) + 'px';
+    });
+  });
+
+  // Mark all read
+  document.querySelector('.mark-all-btn').addEventListener('click', () => {
+    document.querySelectorAll('.lp-notif.unread').forEach(el => el.classList.remove('unread'));
+    document.querySelectorAll('.lp-pm-badge').forEach(b => b.style.display = 'none');
+    document.querySelectorAll('.cnt').forEach(c => c.textContent = '0');
+    const navBadge = document.querySelector('.nav-bell .badge');
+    if (navBadge) navBadge.style.display = 'none';
+  });
+</script>
+</body>
+</html>

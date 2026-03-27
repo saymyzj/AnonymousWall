@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>发帖 — 方案 B：分步卡片式</title>
+<style>
+  *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --bg:#0B0D1A;--bg-surface:#12152A;--bg-card:rgba(255,255,255,0.03);
+    --text-1:#E8E6F0;--text-2:#9896A8;--text-3:#5D5B6E;
+    --brand:#7C5CFC;--pink:#FF6B9D;--cyan:#06D6A0;
+    --border:rgba(255,255,255,0.08);--border-hover:rgba(255,255,255,0.15);
+  }
+  body{background:var(--bg);color:var(--text-1);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Noto Sans SC',sans-serif;min-height:100vh;overflow-x:hidden}
+
+  .stars{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+  .star{position:absolute;background:#fff;border-radius:50%;animation:twinkle var(--d,3s) ease-in-out infinite alternate}
+  @keyframes twinkle{0%{opacity:.15}100%{opacity:.7}}
+  .nebula{position:fixed;border-radius:50%;filter:blur(120px);pointer-events:none;z-index:0}
+  .nebula.n1{width:500px;height:500px;background:rgba(124,92,252,.2);top:-10%;left:-5%}
+  .nebula.n2{width:400px;height:400px;background:rgba(255,107,157,.15);bottom:10%;right:-8%}
+
+  nav{position:fixed;top:0;left:0;right:0;height:64px;background:rgba(11,13,26,.75);backdrop-filter:blur(24px) saturate(1.5);border-bottom:1px solid rgba(255,255,255,.05);z-index:100;display:flex;align-items:center;padding:0 32px}
+  .nav-left{display:flex;align-items:center;gap:12px}
+  .nav-back{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.04);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--text-2);cursor:pointer;transition:all .2s;font-size:18px;text-decoration:none}
+  .nav-back:hover{background:rgba(255,255,255,.1);color:var(--text-1)}
+  .nav-logo{font-size:18px;font-weight:700;background:linear-gradient(135deg,var(--brand),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+
+  .container{position:relative;z-index:1;max-width:640px;margin:0 auto;padding:104px 24px 80px}
+
+  /* Page Title */
+  .page-title{text-align:center;margin-bottom:40px}
+  .page-title h1{font-size:28px;font-weight:800;background:linear-gradient(135deg,#fff,rgba(255,255,255,.6));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px}
+  .page-title p{font-size:14px;color:var(--text-3)}
+
+  /* Step Card */
+  .step-card{background:rgba(255,255,255,.025);border:1px solid var(--border);border-radius:24px;padding:28px;margin-bottom:20px;transition:all .3s}
+  .step-card:hover{border-color:var(--border-hover)}
+  .step-card.focused{border-color:rgba(124,92,252,.3);box-shadow:0 0 0 3px rgba(124,92,252,.08)}
+  .step-header{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+  .step-num{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--brand),var(--pink));display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0}
+  .step-title{font-size:16px;font-weight:600}
+  .step-optional{font-size:12px;color:var(--text-3);margin-left:auto;padding:3px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.06)}
+
+  /* Identity inline */
+  .identity-inline{display:flex;align-items:center;gap:12px;padding:14px 18px;border-radius:16px;background:rgba(255,255,255,.03);border:1px solid var(--border)}
+  .identity-avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--brand));display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+  .identity-name{font-size:14px;font-weight:600;color:var(--text-1)}
+  .identity-sub{font-size:11px;color:var(--text-3);margin-top:1px}
+  .identity-btn{margin-left:auto;padding:5px 12px;border-radius:999px;background:transparent;border:1px solid var(--border);color:var(--text-3);font-size:12px;cursor:pointer;transition:all .2s}
+  .identity-btn:hover{color:var(--brand);border-color:rgba(124,92,252,.3)}
+
+  /* Textarea */
+  .textarea-wrap{position:relative}
+  .textarea-wrap textarea{width:100%;min-height:160px;background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:16px;padding:18px;color:var(--text-1);font-family:inherit;font-size:16px;line-height:1.8;resize:none;outline:none;transition:border-color .3s,box-shadow .3s}
+  .textarea-wrap textarea::placeholder{color:var(--text-3)}
+  .textarea-wrap textarea:focus{border-color:rgba(124,92,252,.4);box-shadow:0 0 0 3px rgba(124,92,252,.1)}
+  .textarea-footer{display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding:0 4px}
+  .textarea-footer .count{font-size:12px;color:var(--text-3)}
+  .textarea-footer .count.warn{color:var(--pink)}
+  .textarea-footer .hint{font-size:12px;color:var(--text-3)}
+
+  /* Tags */
+  .tags{display:flex;flex-wrap:wrap;gap:10px}
+  .tag{padding:10px 20px;border-radius:999px;border:1px solid var(--border);background:rgba(255,255,255,.03);color:var(--text-2);font-size:14px;cursor:pointer;transition:all .3s;user-select:none}
+  .tag:hover{border-color:rgba(255,255,255,.2);color:var(--text-1)}
+  .tag.active{background:var(--brand);border-color:var(--brand);color:#fff;box-shadow:0 2px 16px rgba(124,92,252,.3)}
+
+  /* Color Dots */
+  .colors{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .color-dot{width:36px;height:36px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all .3s;position:relative}
+  .color-dot:hover{transform:scale(1.15)}
+  .color-dot.active{border-color:#fff;box-shadow:0 0 12px rgba(255,255,255,.2)}
+  .color-dot.active::after{content:'✓';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:700}
+
+  /* Image Upload */
+  .image-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .img-slot{aspect-ratio:1;border-radius:20px;border:2px dashed rgba(255,255,255,.08);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .3s;color:var(--text-3);gap:6px;position:relative;overflow:hidden}
+  .img-slot:hover{border-color:var(--brand);color:var(--brand);background:rgba(124,92,252,.03)}
+  .img-slot .icon{font-size:32px;opacity:.5}
+  .img-slot .text{font-size:12px}
+  .img-slot.filled{border:1px solid var(--border);border-style:solid}
+  .img-slot.filled img{width:100%;height:100%;object-fit:cover}
+  .img-slot .remove{position:absolute;top:8px;right:8px;width:24px;height:24px;border-radius:50%;background:rgba(0,0,0,.65);color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;transition:opacity .2s}
+  .img-slot.filled:hover .remove{opacity:1}
+
+  /* Timer + Toggles */
+  .timer-row{display:flex;gap:8px;flex-wrap:wrap}
+  .timer-chip{padding:8px 18px;border-radius:999px;border:1px solid var(--border);background:rgba(255,255,255,.03);color:var(--text-2);font-size:13px;cursor:pointer;transition:all .3s}
+  .timer-chip:hover{border-color:rgba(255,255,255,.2);color:var(--text-1)}
+  .timer-chip.active{background:rgba(124,92,252,.12);border-color:rgba(124,92,252,.35);color:var(--brand)}
+
+  .toggle-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0}
+  .toggle-row+.toggle-row{border-top:1px solid rgba(255,255,255,.04)}
+  .toggle-label{font-size:14px;color:var(--text-2)}
+  .toggle-label small{display:block;font-size:11px;color:var(--text-3);margin-top:2px;font-weight:normal}
+  .toggle{width:44px;height:24px;border-radius:12px;background:rgba(255,255,255,.1);cursor:pointer;position:relative;transition:background .3s;flex-shrink:0}
+  .toggle.on{background:var(--brand)}
+  .toggle::after{content:'';position:absolute;width:18px;height:18px;border-radius:50%;background:#fff;top:3px;left:3px;transition:transform .3s}
+  .toggle.on::after{transform:translateX(20px)}
+
+  /* Submit */
+  .submit-section{text-align:center;padding:16px 0 40px}
+  .submit-btn{display:inline-flex;align-items:center;gap:8px;padding:16px 48px;border-radius:999px;background:linear-gradient(135deg,var(--brand),var(--pink));color:#fff;border:none;font-size:16px;font-weight:700;cursor:pointer;transition:all .3s;letter-spacing:.3px}
+  .submit-btn:hover{box-shadow:0 6px 32px rgba(124,92,252,.35);transform:translateY(-2px)}
+  .submit-sub{font-size:12px;color:var(--text-3);margin-top:12px}
+
+  /* Preview Bubble floating */
+  .preview-float{position:fixed;bottom:24px;right:24px;z-index:50}
+  .preview-toggle{width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,.06);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:24px;cursor:pointer;transition:all .3s;backdrop-filter:blur(12px)}
+  .preview-toggle:hover{background:rgba(255,255,255,.12);transform:scale(1.05)}
+
+  @media(max-width:640px){
+    .container{padding:88px 16px 60px}
+    .step-card{padding:20px;border-radius:20px}
+    .image-grid{grid-template-columns:repeat(3,1fr);gap:10px}
+    .page-title h1{font-size:22px}
+  }
+</style>
+</head>
+<body>
+  <div class="stars" id="stars"></div>
+  <div class="nebula n1"></div>
+  <div class="nebula n2"></div>
+
+  <nav>
+    <div class="nav-left">
+      <a class="nav-back" href="#">←</a>
+      <div class="nav-logo">AnonymousWall</div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="page-title">
+      <h1>发射一颗新气泡 ✦</h1>
+      <p>你的想法将匿名漂浮在星空中</p>
+    </div>
+
+    <!-- Step 1: Identity -->
+    <div class="step-card">
+      <div class="step-header">
+        <div class="step-num">1</div>
+        <div class="step-title">你的匿名身份</div>
+      </div>
+      <div class="identity-inline">
+        <div class="identity-avatar">🐢</div>
+        <div>
+          <div class="identity-name">匿名海龟 #5514</div>
+          <div class="identity-sub">此身份仅用于本次发帖</div>
+        </div>
+        <button class="identity-btn">🎲 换一个</button>
+      </div>
+    </div>
+
+    <!-- Step 2: Content -->
+    <div class="step-card focused">
+      <div class="step-header">
+        <div class="step-num">2</div>
+        <div class="step-title">写下你想说的</div>
+      </div>
+      <div class="textarea-wrap">
+        <textarea placeholder="在这片宇宙里，没人知道你是谁。大胆说出来吧..." oninput="updateCount(this)"></textarea>
+        <div class="textarea-footer">
+          <span class="hint">支持纯文字内容</span>
+          <span class="count" id="charCount">0 / 500</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 3: Tag -->
+    <div class="step-card">
+      <div class="step-header">
+        <div class="step-num">3</div>
+        <div class="step-title">选择标签</div>
+      </div>
+      <div class="tags">
+        <div class="tag">💌 表白</div>
+        <div class="tag">😤 吐槽</div>
+        <div class="tag active">🆘 求助</div>
+        <div class="tag">🕳️ 树洞</div>
+        <div class="tag">🔍 失物招领</div>
+        <div class="tag">🤝 搭子</div>
+      </div>
+    </div>
+
+    <!-- Step 4: Color -->
+    <div class="step-card">
+      <div class="step-header">
+        <div class="step-num">4</div>
+        <div class="step-title">气泡配色</div>
+      </div>
+      <div class="colors">
+        <div class="color-dot" style="background:linear-gradient(135deg,rgba(255,107,157,.6),rgba(255,182,193,.35))" title="粉色"></div>
+        <div class="color-dot" style="background:linear-gradient(135deg,rgba(255,165,89,.6),rgba(255,200,120,.35))" title="橙色"></div>
+        <div class="color-dot active" style="background:linear-gradient(135deg,rgba(6,214,160,.6),rgba(100,230,180,.35))" title="绿色"></div>
+        <div class="color-dot" style="background:linear-gradient(135deg,rgba(100,180,255,.6),rgba(150,200,255,.35))" title="蓝色"></div>
+        <div class="color-dot" style="background:linear-gradient(135deg,rgba(124,92,252,.6),rgba(180,160,255,.35))" title="紫色"></div>
+        <div class="color-dot" style="background:linear-gradient(135deg,rgba(255,230,100,.6),rgba(255,240,150,.35))" title="黄色"></div>
+        <div class="color-dot" style="background:linear-gradient(135deg,rgba(255,255,255,.2),rgba(255,255,255,.1))" title="灰色"></div>
+        <div class="color-dot" style="background:linear-gradient(135deg,rgba(200,160,120,.6),rgba(220,180,140,.35))" title="棕色"></div>
+      </div>
+    </div>
+
+    <!-- Step 5: Images -->
+    <div class="step-card">
+      <div class="step-header">
+        <div class="step-num">5</div>
+        <div class="step-title">上传图片</div>
+        <span class="step-optional">可选</span>
+      </div>
+      <div class="image-grid">
+        <div class="img-slot filled">
+          <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Crect fill='%231a1a3e' width='200' height='200'/%3E%3Ctext fill='%237C5CFC' x='50%25' y='50%25' text-anchor='middle' dy='.3em' font-size='48'%3E🌌%3C/text%3E%3C/svg%3E" alt="">
+          <div class="remove">✕</div>
+        </div>
+        <div class="img-slot">
+          <div class="icon">📷</div>
+          <div class="text">点击上传</div>
+        </div>
+        <div class="img-slot">
+          <div class="icon">+</div>
+          <div class="text">拖拽或点击</div>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--text-3);margin-top:10px">最多 3 张，单张不超过 5MB，支持 JPG / PNG / WebP</div>
+    </div>
+
+    <!-- Step 6: Options -->
+    <div class="step-card">
+      <div class="step-header">
+        <div class="step-num">6</div>
+        <div class="step-title">高级选项</div>
+        <span class="step-optional">可选</span>
+      </div>
+
+      <div style="margin-bottom:18px">
+        <div style="font-size:13px;color:var(--text-2);margin-bottom:10px;font-weight:600">⏱️ 自毁时间</div>
+        <div class="timer-row">
+          <div class="timer-chip">24 小时</div>
+          <div class="timer-chip">48 小时</div>
+          <div class="timer-chip">7 天</div>
+          <div class="timer-chip active">永久保留</div>
+        </div>
+      </div>
+
+      <div class="toggle-row">
+        <div class="toggle-label">允许匿名私信<small>其他用户可以通过此帖向你发起私信</small></div>
+        <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-label">附加投票<small>为帖子添加一个投票，最多 6 个选项</small></div>
+        <div class="toggle" onclick="this.classList.toggle('on')"></div>
+      </div>
+    </div>
+
+    <!-- Submit -->
+    <div class="submit-section">
+      <button class="submit-btn">✦ 发布到宇宙</button>
+      <div class="submit-sub">发布后 10 分钟内可以编辑</div>
+    </div>
+  </div>
+
+  <!-- Preview Float -->
+  <div class="preview-float">
+    <div class="preview-toggle" title="预览气泡效果">👁️</div>
+  </div>
+
+  <script>
+    const sf=document.getElementById('stars');
+    for(let i=0;i<100;i++){const s=document.createElement('div');s.className='star';s.style.cssText=`width:${1+Math.random()*2}px;height:${1+Math.random()*2}px;top:${Math.random()*100}%;left:${Math.random()*100}%;--d:${2+Math.random()*4}s;animation-delay:${Math.random()*3}s`;sf.appendChild(s)}
+
+    function updateCount(el){
+      const c=el.value.length;
+      const d=document.getElementById('charCount');
+      d.textContent=c+' / 500';
+      d.className='count'+(c>450?' warn':'');
+    }
+
+    document.querySelectorAll('.tag').forEach(t=>t.addEventListener('click',()=>{
+      document.querySelectorAll('.tag').forEach(x=>x.classList.remove('active'));
+      t.classList.add('active');
+    }));
+    document.querySelectorAll('.timer-chip').forEach(t=>t.addEventListener('click',()=>{
+      document.querySelectorAll('.timer-chip').forEach(x=>x.classList.remove('active'));
+      t.classList.add('active');
+    }));
+    document.querySelectorAll('.color-dot').forEach(d=>d.addEventListener('click',()=>{
+      document.querySelectorAll('.color-dot').forEach(x=>x.classList.remove('active'));
+      d.classList.add('active');
+    }));
+  </script>
+</body>
+</html>

@@ -22,7 +22,7 @@
 
 #### 后端
 
-- [ ] **1-1. User 模型增加字段**（`backend/apps/users/models.py`）
+- [x] **1-1. User 模型增加字段**（`backend/apps/users/models.py`）
   ```python
   # 新增字段
   student_id = models.CharField('学号/工号', max_length=30, blank=True, default='')
@@ -34,7 +34,7 @@
   - `is_verified`：管理员审核通过后设为 `True`
   - 运行 `python manage.py makemigrations users && python manage.py migrate`
 
-- [ ] **1-2. 注册 Serializer 增加字段**（`backend/apps/users/serializers.py`）
+- [x] **1-2. 注册 Serializer 增加字段**（`backend/apps/users/serializers.py`）
   ```python
   class RegisterSerializer(serializers.Serializer):
       email = serializers.EmailField()
@@ -46,7 +46,7 @@
   - `validate_student_id`：校验格式（仅允许字母和数字）、校验唯一性（同一学号不可重复注册）
   - `create` 方法中将 `student_id` 和 `real_name` 写入 User
 
-- [ ] **1-3. 自定义权限类**（新建 `backend/common/permissions.py`）
+- [x] **1-3. 自定义权限类**（新建 `backend/common/permissions.py`）
   ```python
   from rest_framework.permissions import BasePermission
 
@@ -62,33 +62,33 @@
           )
   ```
 
-- [ ] **1-4. 替换发帖/评论/点赞 View 的权限**
+- [x] **1-4. 替换发帖/评论/点赞 View 的权限**
   - `backend/apps/posts/views.py` 的 `create_post`、`delete_post`：`IsAuthenticated` → `IsVerifiedUser`
   - `backend/apps/comments/views.py` 的 `create_comment`、`delete_comment`：`IsAuthenticated` → `IsVerifiedUser`
   - `backend/apps/interactions/views.py` 的点赞 View：`IsAuthenticated` → `IsVerifiedUser`
   - 注意：帖子列表 `post_list` 和详情 `post_detail` 保持 `AllowAny`，未验证用户可浏览
 
-- [ ] **1-5. 用户信息接口返回验证状态**
+- [x] **1-5. 用户信息接口返回验证状态**
   - `UserInfoSerializer` 的 `fields` 增加 `is_verified`、`student_id`
   - 前端可据此判断是否展示操作按钮
 
-- [ ] **1-6. Admin 后台增加审核操作**（`backend/apps/users/admin.py`）
+- [x] **1-6. Admin 后台增加审核操作**（`backend/apps/users/admin.py`）
   - 用户列表增加 `student_id`、`real_name`、`is_verified` 列
   - 增加自定义 Action："通过验证"（批量设置 `is_verified=True`）
   - 增加筛选器：按 `is_verified` 筛选待审核用户
 
 #### 前端
 
-- [ ] **1-7. 注册表单增加字段**（`frontend/src/pages/Login.vue`）
+- [x] **1-7. 注册表单增加字段**（`frontend/src/pages/Login.vue`）
   - 注册模式下显示额外输入框：`学号/工号`（必填）、`真实姓名`（必填）
   - 登录模式下仍然只需邮箱和密码
   - 提交注册时将 `student_id` 和 `real_name` 一并发送
 
-- [ ] **1-8. auth store 和 API 适配**（`frontend/src/stores/auth.ts`、`frontend/src/api/auth.ts`）
+- [x] **1-8. auth store 和 API 适配**（`frontend/src/stores/auth.ts`、`frontend/src/api/auth.ts`）
   - `register()` 方法增加 `student_id`、`real_name` 参数
   - `userInfo` 中存储 `is_verified` 状态
 
-- [ ] **1-9. 未验证用户的 UI 限制**
+- [x] **1-9. 未验证用户的 UI 限制**
   - 全局判断 `authStore.isVerified`：
     - 未验证用户：隐藏发帖 FAB 按钮，帖子详情隐藏评论输入框，点赞按钮点击时 Toast 提示"账号审核中，暂时只能浏览"
     - 已验证用户：正常交互
@@ -114,7 +114,7 @@
 
 #### 前端（核心修复）
 
-- [ ] **2-1. PostDetail.vue 中增加评论树构建逻辑**
+- [x] **2-1. PostDetail.vue 中增加评论树构建逻辑**
 
   将后端返回的扁平评论列表组装为树结构，然后按树的顺序渲染：
 
@@ -153,7 +153,7 @@
   }
   ```
 
-- [ ] **2-2. 修改评论列表渲染为递归组件**
+- [x] **2-2. 修改评论列表渲染为递归组件**
 
   将 `PostDetail.vue` 的评论列表改为递归渲染树结构：
 
@@ -175,7 +175,7 @@
 
   或者更简洁地，将 `CommentItem` 改造为递归组件，接收 `children` 并自行渲染子评论。
 
-- [ ] **2-3. 修改 CommentItem.vue 支持嵌套渲染**
+- [x] **2-3. 修改 CommentItem.vue 支持嵌套渲染**
 
   方案一（推荐）：创建 `CommentTree.vue` 递归组件：
 
@@ -206,7 +206,7 @@
   - 嵌套深度限制：最多缩进 2 层（`depth < 2`），超过 2 层不再缩进但仍在父评论树下
   - `CommentItem.vue` 本身不再处理 `is-reply` 样式，由 `CommentTree.vue` 控制缩进
 
-- [ ] **2-4. 后端确保返回完整评论列表**
+- [x] **2-4. 后端确保返回完整评论列表**
 
   当前分页可能导致评论树不完整（父评论在第 1 页，子评论在第 2 页）。有两种策略：
 
@@ -220,7 +220,7 @@
   paginator.page_size = 200  # 或直接不使用分页
   ```
 
-- [ ] **2-5. CommentItem.vue 移除 is-reply 相关样式**
+- [x] **2-5. CommentItem.vue 移除 is-reply 相关样式**
 
   由于缩进逻辑由外层 `CommentTree.vue` 控制，`CommentItem.vue` 中的 `.is-reply` class 和对应样式应移除，改为纯展示组件。
 
@@ -244,7 +244,7 @@
 
 #### 前端 — Home.vue 布局修复
 
-- [ ] **3-1. 实现瀑布流布局**
+- [x] **3-1. 实现瀑布流布局**
 
   移动端（< 768px）保持单列，但卡片高度自适应（不截断）：
 
@@ -279,7 +279,7 @@
   </div>
   ```
 
-- [ ] **3-2. PostCard.vue 移除固定行截断，改为内容自适应**
+- [x] **3-2. PostCard.vue 移除固定行截断，改为内容自适应**
 
   当前 `.card-content` 的 `-webkit-line-clamp: 3` 使所有卡片等高。修改为：
   - 短文本（≤ 50 字）：不截断，卡片自然小（小气泡）
@@ -311,7 +311,7 @@
 
 #### 前端 — PostCard.vue 气泡样式增强
 
-- [ ] **3-3. 卡片加载动画（气泡淡入浮上）**
+- [x] **3-3. 卡片加载动画（气泡淡入浮上）**
 
   参照 UI 设计 8.3，卡片从下方淡入浮上：
   ```css
@@ -339,7 +339,7 @@
   .post-card:nth-child(6) { animation-delay: 250ms; }
   ```
 
-- [ ] **3-4. 点赞动效增强**
+- [x] **3-4. 点赞动效增强**
 
   参照 UI 设计 8.3，点赞时心形弹跳：
   ```css
@@ -355,7 +355,7 @@
   }
   ```
 
-- [ ] **3-5. 标签选中弹性动效**
+- [x] **3-5. 标签选中弹性动效**
 
   参照 UI 设计 7.2，标签选中时弹性放大：
   ```css
@@ -372,7 +372,7 @@
 
 #### 前端 — DefaultLayout.vue 导航栏修复
 
-- [ ] **3-6. 导航栏增加搜索图标和通知图标**
+- [x] **3-6. 导航栏增加搜索图标和通知图标**
 
   参照 UI 设计 7.1，导航栏右侧应有：搜索图标 + 通知铃铛 + 用户头像。
   当前只有用户头像/登录按钮，需增加搜索和通知图标：
@@ -387,14 +387,14 @@
   ```
   注意：通知功能不在 MVP 范围，图标可先占位不跳转。搜索功能见 Bug 4。
 
-- [ ] **3-7. Logo 增加气泡 emoji 前缀**
+- [x] **3-7. Logo 增加气泡 emoji 前缀**
 
   参照 UI 设计 7.1，Logo 应带气泡 emoji：
   ```html
   <router-link to="/" class="logo">🫧 AnonymousWall</router-link>
   ```
 
-- [ ] **3-8. FAB 按钮滚动隐藏/显示**
+- [x] **3-8. FAB 按钮滚动隐藏/显示**
 
   参照 UI 设计 7.7，向下滚动时隐藏 FAB，向上滚动时显示：
   ```typescript
@@ -421,11 +421,11 @@
 
 #### 前端 — 全局样式补充
 
-- [ ] **3-9. variables.css 中补充缺失的 CSS 变量**
+- [x] **3-9. variables.css 中补充缺失的 CSS 变量**
 
   参照 UI 设计 2.4，检查并补充缺失的变量定义。当前缺少 `--shadow-sm` 等变量在深色模式下的覆盖值（深色模式下阴影应替换为边框），以及缓动函数变量等。
 
-- [ ] **3-10. global.css 补充深色模式下气泡渐变色**
+- [x] **3-10. global.css 补充深色模式下气泡渐变色**
 
   参照 UI 设计 2.2，深色模式下降低饱和度 30%、亮度 20%：
   ```css
@@ -435,20 +435,20 @@
 
 #### 其他页面对照 UI 设计检查
 
-- [ ] **3-11. 帖子详情页对照 UI 设计 7.9 检查评论区样式**
+- [x] **3-11. 帖子详情页对照 UI 设计 7.9 检查评论区样式**
   - 评论容器背景使用 `var(--card-bg)`，圆角 20px ✅（已实现）
   - 匿名标识颜色池对照 UI 设计 7.9 的 8 种颜色 ✅（serializer 中已实现）
 
-- [ ] **3-12. 发帖页对照 UI 设计 7.13 检查**
+- [x] **3-12. 发帖页对照 UI 设计 7.13 检查**
   - 背景色选择器：8 个色彩圆点应有选中双圈效果
   - 标签选择器：胶囊形单选
 
-- [ ] **3-13. 个人中心页对照 UI 设计 7.14 检查**
+- [x] **3-13. 个人中心页对照 UI 设计 7.14 检查**
   - 顶部用户区居中、大头像（72px）
   - 数据统计三等分卡片
   - 菜单列表圆角卡片包裹
 
-- [ ] **3-14. 隐藏滚动条**
+- [x] **3-14. 隐藏滚动条**
   当前 `global.css` 已有 `::-webkit-scrollbar { display: none; }`，但标签栏等横向滚动区域需要额外确认 Firefox 兼容：
   ```css
   .tag-bar {
@@ -474,7 +474,7 @@
 
 #### 后端
 
-- [ ] **4-1. post_list View 增加关键词搜索**（`backend/apps/posts/views.py`）
+- [x] **4-1. post_list View 增加关键词搜索**（`backend/apps/posts/views.py`）
 
   在 `post_list` 函数中增加 `search` 查询参数：
   ```python
@@ -489,7 +489,7 @@
 
 #### 前端
 
-- [ ] **4-2. 导航栏搜索交互**（`frontend/src/layouts/DefaultLayout.vue`）
+- [x] **4-2. 导航栏搜索交互**（`frontend/src/layouts/DefaultLayout.vue`）
 
   参照 UI 设计 7.1 和 7.8：
   - 导航栏右侧增加搜索图标（🔍）
@@ -519,7 +519,7 @@
   </nav>
   ```
 
-- [ ] **4-3. Posts Store 增加搜索支持**（`frontend/src/stores/posts.ts`）
+- [x] **4-3. Posts Store 增加搜索支持**（`frontend/src/stores/posts.ts`）
 
   在 `filters` 中增加 `search` 字段：
   ```typescript
@@ -538,7 +538,7 @@
   // ...其余 filter 参数
   ```
 
-- [ ] **4-4. 搜索结果页面**
+- [x] **4-4. 搜索结果页面**
 
   两种方案选一：
 
@@ -556,7 +556,7 @@
 
   搜索时导航栏组件通过 `router.push({ path: '/', query: { search: keyword } })` 跳转
 
-- [ ] **4-5. 搜索关键词高亮（可选增强）**
+- [x] **4-5. 搜索关键词高亮（可选增强）**
 
   参照功能设计 7.2，搜索结果中关键词高亮显示。在 `PostCard.vue` 中：
   ```typescript

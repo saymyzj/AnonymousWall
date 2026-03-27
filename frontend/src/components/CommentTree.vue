@@ -32,8 +32,8 @@ defineEmits(['reply', 'like', 'delete'])
 
 <style scoped>
 .children.nested {
-  margin-left: 16px;
-  padding-left: 12px;
-  border-left: 3px solid var(--brand-primary-light);
+  margin-left: 50px;
+  padding-left: 20px;
+  border-left: 2px solid rgba(255, 255, 255, 0.06);
 }
 </style>

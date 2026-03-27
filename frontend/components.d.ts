@@ -17,6 +17,7 @@ declare module 'vue' {
     PostCard: typeof import('./src/components/PostCard.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    StarryBackground: typeof import('./src/components/StarryBackground.vue')['default']
     VanLoading: typeof import('vant/es')['Loading']
     VanPopup: typeof import('vant/es')['Popup']
   }

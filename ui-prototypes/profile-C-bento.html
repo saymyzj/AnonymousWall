@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profile C — Bento Grid Dashboard (个人中心)</title>
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0B0D1A;
+    --bg-surface: #12152A;
+    --bg-card: rgba(255,255,255,0.04);
+    --bg-card-hover: rgba(255,255,255,0.08);
+    --text-1: #E8E6F0;
+    --text-2: #9896A8;
+    --text-3: #5D5B6E;
+    --brand: #7C5CFC;
+    --brand-glow: rgba(124,92,252,0.25);
+    --pink: #FF6B9D;
+    --pink-glow: rgba(255,107,157,0.2);
+    --cyan: #06D6A0;
+    --radius-bubble: 24px;
+    --radius-pill: 999px;
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Noto Sans SC', sans-serif;
+    --border: rgba(255,255,255,0.08);
+
+    --b1: linear-gradient(135deg, rgba(255,107,157,0.18), rgba(255,182,193,0.12));
+    --b2: linear-gradient(135deg, rgba(255,165,89,0.18), rgba(255,200,120,0.12));
+    --b3: linear-gradient(135deg, rgba(6,214,160,0.18), rgba(100,230,180,0.12));
+    --b4: linear-gradient(135deg, rgba(100,180,255,0.18), rgba(150,200,255,0.12));
+    --b5: linear-gradient(135deg, rgba(124,92,252,0.18), rgba(180,160,255,0.12));
+    --b6: linear-gradient(135deg, rgba(255,230,100,0.18), rgba(255,240,150,0.12));
+    --b7: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
+    --b8: linear-gradient(135deg, rgba(200,160,120,0.18), rgba(220,180,140,0.12));
+
+    --b1-border: rgba(255,107,157,0.2);
+    --b2-border: rgba(255,165,89,0.2);
+    --b3-border: rgba(6,214,160,0.2);
+    --b4-border: rgba(100,180,255,0.2);
+    --b5-border: rgba(124,92,252,0.2);
+    --b6-border: rgba(255,230,100,0.2);
+    --b7-border: rgba(255,255,255,0.08);
+    --b8-border: rgba(200,160,120,0.2);
+  }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text-1);
+    line-height: 1.6;
+    overflow-x: hidden;
+    min-height: 100vh;
+  }
+
+  /* ===== STARS ===== */
+  .stars { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+  .star { position: absolute; border-radius: 50%; background: #fff; animation: twinkle 3s ease-in-out infinite alternate; }
+  @keyframes twinkle { 0% { opacity: 0.2; } 100% { opacity: 0.8; } }
+  .nebula { position: fixed; border-radius: 50%; filter: blur(100px); pointer-events: none; z-index: 0; }
+  .nebula-1 { width: 500px; height: 500px; top: -150px; right: -100px; background: var(--brand-glow); }
+  .nebula-2 { width: 400px; height: 400px; bottom: -100px; left: -80px; background: var(--pink-glow); }
+  .nebula-3 { width: 300px; height: 300px; top: 50%; left: 50%; transform: translate(-50%,-50%); background: rgba(6,214,160,0.08); }
+
+  /* ===== NAV ===== */
+  .nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    height: 64px; display: flex; align-items: center; justify-content: space-between;
+    padding: 0 48px;
+    background: rgba(11,13,26,0.7);
+    backdrop-filter: blur(24px) saturate(1.5);
+    -webkit-backdrop-filter: blur(24px) saturate(1.5);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .nav-logo {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 20px; font-weight: 700;
+    background: linear-gradient(135deg, var(--brand), var(--pink));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text; text-decoration: none;
+  }
+  .nav-logo span { font-size: 22px; -webkit-text-fill-color: initial; }
+  .nav-right { display: flex; align-items: center; gap: 14px; }
+  .nav-icon-btn {
+    width: 38px; height: 38px; border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.04); color: var(--text-2);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 16px; transition: all 0.2s;
+  }
+  .nav-icon-btn:hover { background: rgba(255,255,255,0.08); color: var(--text-1); }
+
+  /* ===== MAIN ===== */
+  .main {
+    position: relative; z-index: 1;
+    max-width: 1100px; margin: 0 auto;
+    padding: 88px 32px 60px;
+  }
+
+  /* ===== PROFILE HEADER ===== */
+  .profile-header {
+    display: flex; align-items: center; gap: 24px;
+    padding: 28px 32px;
+    background: rgba(255,255,255,0.03);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-bubble);
+    margin-bottom: 24px;
+  }
+  .profile-avatar {
+    width: 64px; height: 64px; border-radius: 50%; flex-shrink: 0;
+    background: linear-gradient(135deg, var(--brand), var(--pink));
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+  }
+  .profile-avatar svg { width: 38px; height: 38px; }
+  .profile-info { flex: 1; }
+  .profile-name { font-size: 22px; font-weight: 700; margin-bottom: 2px; }
+  .profile-sub { font-size: 13px; color: var(--text-3); }
+  .profile-stats {
+    display: flex; gap: 32px;
+  }
+  .profile-stat { text-align: center; }
+  .profile-stat-num {
+    font-size: 22px; font-weight: 800;
+    background: linear-gradient(135deg, var(--brand), var(--pink));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .profile-stat:nth-child(2) .profile-stat-num {
+    background: linear-gradient(135deg, var(--cyan), #64B4FF);
+    -webkit-background-clip: text; background-clip: text;
+  }
+  .profile-stat:nth-child(3) .profile-stat-num {
+    background: linear-gradient(135deg, var(--pink), #FF9B6A);
+    -webkit-background-clip: text; background-clip: text;
+  }
+  .profile-stat-label { font-size: 12px; color: var(--text-3); margin-top: 2px; }
+
+  /* ===== BENTO GRID ===== */
+  .bento {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-auto-rows: auto;
+    gap: 20px;
+  }
+
+  .bento-card {
+    background: rgba(255,255,255,0.03);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-bubble);
+    padding: 24px;
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+  }
+  .bento-card:hover {
+    transform: translateY(-6px);
+    border-color: rgba(255,255,255,0.15);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+  }
+  .bento-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 3px; opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .bento-card:hover::before { opacity: 1; }
+
+  .bento-card.card-posts { grid-column: span 2; grid-row: span 1; }
+  .bento-card.card-posts::before { background: linear-gradient(90deg, var(--brand), var(--pink)); }
+
+  .bento-card.card-comments { grid-column: span 1; grid-row: span 1; }
+  .bento-card.card-comments::before { background: linear-gradient(90deg, var(--cyan), #64B4FF); }
+
+  .bento-card.card-bookmarks { grid-column: span 1; grid-row: span 1; }
+  .bento-card.card-bookmarks::before { background: linear-gradient(90deg, var(--pink), #FF9B6A); }
+
+  .bento-card.card-stats { grid-column: span 2; grid-row: span 1; }
+  .bento-card.card-stats::before { background: linear-gradient(90deg, #FFE664, var(--cyan)); }
+
+  .bento-card.card-settings { grid-column: span 2; grid-row: span 1; }
+  .bento-card.card-settings::before { background: linear-gradient(90deg, var(--brand), var(--cyan)); }
+
+  /* Card header */
+  .bento-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  .bento-title {
+    font-size: 16px; font-weight: 700;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .bento-title .icon { font-size: 18px; }
+  .bento-view-all {
+    font-size: 12px; color: var(--brand);
+    text-decoration: none; cursor: pointer;
+    display: flex; align-items: center; gap: 4px;
+    padding: 4px 12px; border-radius: var(--radius-pill);
+    border: 1px solid rgba(124,92,252,0.2);
+    background: rgba(124,92,252,0.06);
+    transition: all 0.2s;
+  }
+  .bento-view-all:hover { background: rgba(124,92,252,0.15); }
+
+  /* ===== MINI POST CARDS ===== */
+  .mini-posts { display: flex; flex-direction: column; gap: 14px; }
+  .mini-post {
+    padding: 16px; border-radius: 16px;
+    border: 1px solid var(--border);
+    transition: all 0.2s; cursor: pointer;
+  }
+  .mini-post:hover { border-color: rgba(255,255,255,0.15); background: rgba(255,255,255,0.02); }
+  .mini-post-header {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 8px;
+  }
+  .mini-post-avatar {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--brand), var(--pink));
+    display: flex; align-items: center; justify-content: center; font-size: 11px;
+    flex-shrink: 0;
+  }
+  .mini-post-name { font-size: 12px; font-weight: 600; }
+  .mini-post-time { font-size: 11px; color: var(--text-3); margin-left: auto; }
+  .mini-post-body {
+    font-size: 13px; color: var(--text-2); line-height: 1.6;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .mini-post-footer {
+    display: flex; gap: 14px; margin-top: 10px;
+    font-size: 11px; color: var(--text-3);
+  }
+  .mini-post-footer span { display: flex; align-items: center; gap: 3px; }
+
+  .mini-post.b1 { background: var(--b1); border-color: var(--b1-border); }
+  .mini-post.b2 { background: var(--b2); border-color: var(--b2-border); }
+  .mini-post.b3 { background: var(--b3); border-color: var(--b3-border); }
+  .mini-post.b4 { background: var(--b4); border-color: var(--b4-border); }
+  .mini-post.b5 { background: var(--b5); border-color: var(--b5-border); }
+  .mini-post.b6 { background: var(--b6); border-color: var(--b6-border); }
+
+  /* ===== COMMENTS ===== */
+  .mini-comments { display: flex; flex-direction: column; gap: 12px; }
+  .mini-comment {
+    padding: 14px; border-radius: 14px;
+    background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+    transition: all 0.2s;
+  }
+  .mini-comment:hover { background: rgba(255,255,255,0.06); }
+  .mini-comment-text {
+    font-size: 13px; color: var(--text-1); line-height: 1.6;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    overflow: hidden; margin-bottom: 8px;
+  }
+  .mini-comment-meta {
+    font-size: 11px; color: var(--text-3);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .mini-comment-link {
+    color: var(--brand); text-decoration: none; font-size: 11px;
+  }
+  .mini-comment-link:hover { text-decoration: underline; }
+
+  /* ===== BOOKMARKS MINI GRID ===== */
+  .bookmark-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  }
+  .bookmark-mini {
+    padding: 14px; border-radius: 14px;
+    border: 1px solid var(--border);
+    cursor: pointer; transition: all 0.2s;
+  }
+  .bookmark-mini:hover { border-color: rgba(255,255,255,0.15); }
+  .bookmark-mini-body {
+    font-size: 12px; color: var(--text-2); line-height: 1.5;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+    overflow: hidden; margin-bottom: 8px;
+  }
+  .bookmark-mini-footer {
+    font-size: 10px; color: var(--text-3);
+    display: flex; gap: 8px;
+  }
+  .bookmark-mini.b1 { background: var(--b1); border-color: var(--b1-border); }
+  .bookmark-mini.b3 { background: var(--b3); border-color: var(--b3-border); }
+  .bookmark-mini.b5 { background: var(--b5); border-color: var(--b5-border); }
+  .bookmark-mini.b6 { background: var(--b6); border-color: var(--b6-border); }
+
+  /* ===== STATS ===== */
+  .stats-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+  }
+  .stat-box {
+    text-align: center; padding: 20px 12px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    transition: all 0.3s;
+  }
+  .stat-box:hover { background: rgba(255,255,255,0.06); transform: scale(1.03); }
+  .stat-icon { font-size: 24px; margin-bottom: 8px; }
+  .stat-number {
+    font-size: 36px; font-weight: 800; font-variant-numeric: tabular-nums;
+  }
+  .stat-number.purple {
+    background: linear-gradient(135deg, var(--brand), #B4A0FF);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+  .stat-number.teal {
+    background: linear-gradient(135deg, var(--cyan), #64B4FF);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+  .stat-number.rose {
+    background: linear-gradient(135deg, var(--pink), #FF9B6A);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+  .stat-label { font-size: 13px; color: var(--text-3); margin-top: 4px; }
+
+  /* ===== SETTINGS QUICK ===== */
+  .settings-quick { display: flex; flex-direction: column; gap: 20px; }
+  .setting-row {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px;
+  }
+  .setting-left { flex: 1; }
+  .setting-label { font-size: 14px; font-weight: 500; color: var(--text-1); }
+  .setting-desc { font-size: 12px; color: var(--text-3); margin-top: 2px; }
+  .setting-input-row { display: flex; gap: 10px; align-items: center; }
+  .setting-input {
+    flex: 1; max-width: 280px; padding: 10px 14px;
+    background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+    border-radius: 12px; color: var(--text-1); font-size: 13px;
+    font-family: var(--font); outline: none; transition: all 0.2s;
+  }
+  .setting-input:focus { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(124,92,252,0.15); }
+  .setting-btn {
+    padding: 8px 20px; border-radius: var(--radius-pill);
+    border: none; background: var(--brand); color: #fff;
+    font-size: 12px; font-weight: 600; cursor: pointer;
+    transition: all 0.2s; font-family: var(--font); white-space: nowrap;
+  }
+  .setting-btn:hover { background: #6a4ce0; }
+  .toggle {
+    width: 48px; height: 26px; border-radius: 13px;
+    background: rgba(255,255,255,0.1); cursor: pointer;
+    position: relative; transition: all 0.3s; flex-shrink: 0;
+  }
+  .toggle.active { background: var(--brand); }
+  .toggle::after {
+    content: ''; position: absolute; top: 3px; left: 3px;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: #fff; transition: all 0.3s;
+  }
+  .toggle.active::after { left: 25px; }
+  .settings-divider {
+    height: 1px; background: var(--border);
+  }
+
+  /* ===== EXPANDED VIEW OVERLAY ===== */
+  .expanded-overlay {
+    display: none; position: fixed; inset: 0; z-index: 200;
+    background: rgba(11,13,26,0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .expanded-overlay.active { display: flex; align-items: flex-start; justify-content: center; padding-top: 80px; }
+  .expanded-panel {
+    width: 90%; max-width: 800px; max-height: 80vh;
+    background: rgba(18,21,42,0.95);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-bubble);
+    padding: 32px; overflow-y: auto;
+  }
+  .expanded-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 24px;
+  }
+  .expanded-title { font-size: 20px; font-weight: 700; }
+  .expanded-close {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: rgba(255,255,255,0.06); border: 1px solid var(--border);
+    color: var(--text-2); font-size: 16px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+  .expanded-close:hover { background: rgba(255,60,60,0.15); color: #ff6b6b; }
+  .expanded-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;
+  }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 900px) {
+    .bento {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .bento-card.card-posts { grid-column: span 2; }
+    .bento-card.card-stats { grid-column: span 2; }
+    .bento-card.card-settings { grid-column: span 2; }
+  }
+
+  @media (max-width: 640px) {
+    .nav { padding: 0 16px; }
+    .main { padding: 80px 12px 40px; }
+    .profile-header {
+      flex-direction: column; text-align: center; gap: 16px; padding: 24px 20px;
+    }
+    .profile-stats { gap: 20px; }
+    .bento {
+      grid-template-columns: 1fr;
+    }
+    .bento-card.card-posts,
+    .bento-card.card-stats,
+    .bento-card.card-settings { grid-column: span 1; }
+    .stats-grid { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .stat-number { font-size: 26px; }
+    .stat-box { padding: 14px 8px; }
+    .bookmark-grid { grid-template-columns: 1fr; }
+    .expanded-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Background -->
+<div class="stars" id="stars"></div>
+<div class="nebula nebula-1"></div>
+<div class="nebula nebula-2"></div>
+<div class="nebula nebula-3"></div>
+
+<!-- Nav -->
+<nav class="nav">
+  <a class="nav-logo" href="#">
+    <span>🫧</span> 匿名星球
+  </a>
+  <div class="nav-right">
+    <button class="nav-icon-btn">🔍</button>
+    <button class="nav-icon-btn">🔔</button>
+    <button class="nav-icon-btn" style="border-color:var(--brand);">👤</button>
+  </div>
+</nav>
+
+<!-- Main -->
+<div class="main">
+
+  <!-- Profile Header -->
+  <div class="profile-header">
+    <div class="profile-avatar">
+      <svg viewBox="0 0 38 38" fill="none">
+        <circle cx="19" cy="14" r="6" fill="rgba(255,255,255,0.9)"/>
+        <path d="M6 34c0-7.18 5.82-13 13-13s13 5.82 13 13" fill="rgba(255,255,255,0.7)"/>
+        <rect x="9" y="5" width="5" height="5" rx="1" fill="rgba(255,255,255,0.3)" transform="rotate(15 11.5 7.5)"/>
+        <circle cx="19" cy="14" r="2.5" fill="rgba(124,92,252,0.6)"/>
+      </svg>
+    </div>
+    <div class="profile-info">
+      <div class="profile-name">星际旅行者 #4827</div>
+      <div class="profile-sub">u***2@example.com &middot; 2024年3月加入</div>
+    </div>
+    <div class="profile-stats">
+      <div class="profile-stat">
+        <div class="profile-stat-num" data-target="23">0</div>
+        <div class="profile-stat-label">发布</div>
+      </div>
+      <div class="profile-stat">
+        <div class="profile-stat-num" data-target="156">0</div>
+        <div class="profile-stat-label">评论</div>
+      </div>
+      <div class="profile-stat">
+        <div class="profile-stat-num" data-target="892">0</div>
+        <div class="profile-stat-label">获赞</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bento Grid -->
+  <div class="bento">
+
+    <!-- LARGE: Recent Posts -->
+    <div class="bento-card card-posts">
+      <div class="bento-header">
+        <div class="bento-title"><span class="icon">📝</span> 最近发布</div>
+        <a class="bento-view-all" onclick="openExpanded('posts')">查看全部 &rarr;</a>
+      </div>
+      <div class="mini-posts" id="miniPosts"></div>
+    </div>
+
+    <!-- MEDIUM: Comments -->
+    <div class="bento-card card-comments">
+      <div class="bento-header">
+        <div class="bento-title"><span class="icon">💬</span> 评论动态</div>
+        <a class="bento-view-all" onclick="openExpanded('comments')">查看全部 &rarr;</a>
+      </div>
+      <div class="mini-comments" id="miniComments"></div>
+    </div>
+
+    <!-- MEDIUM: Bookmarks -->
+    <div class="bento-card card-bookmarks">
+      <div class="bento-header">
+        <div class="bento-title"><span class="icon">⭐</span> 收藏夹</div>
+        <a class="bento-view-all" onclick="openExpanded('bookmarks')">查看全部 &rarr;</a>
+      </div>
+      <div class="bookmark-grid" id="bookmarkGrid"></div>
+    </div>
+
+    <!-- SMALL: Stats -->
+    <div class="bento-card card-stats">
+      <div class="bento-header">
+        <div class="bento-title"><span class="icon">📊</span> 数据概览</div>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-box">
+          <div class="stat-icon">📝</div>
+          <div class="stat-number purple" data-target="23">0</div>
+          <div class="stat-label">总发布</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-icon">💬</div>
+          <div class="stat-number teal" data-target="156">0</div>
+          <div class="stat-label">总评论</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-icon">❤️</div>
+          <div class="stat-number rose" data-target="892">0</div>
+          <div class="stat-label">获赞数</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SMALL: Quick Settings -->
+    <div class="bento-card card-settings">
+      <div class="bento-header">
+        <div class="bento-title"><span class="icon">⚙️</span> 账号设置</div>
+      </div>
+      <div class="settings-quick">
+        <div class="setting-row">
+          <div class="setting-left">
+            <div class="setting-label">匿名昵称</div>
+            <div class="setting-desc">修改后在新内容中显示</div>
+          </div>
+          <div class="setting-input-row">
+            <input class="setting-input" value="星际旅行者 #4827">
+            <button class="setting-btn">保存</button>
+          </div>
+        </div>
+        <div class="settings-divider"></div>
+        <div class="setting-row">
+          <div class="setting-left">
+            <div class="setting-label">深色模式</div>
+            <div class="setting-desc">当前使用深色宇宙主题</div>
+          </div>
+          <div class="toggle active" onclick="this.classList.toggle('active')"></div>
+        </div>
+        <div class="settings-divider"></div>
+        <div class="setting-row">
+          <div class="setting-left">
+            <div class="setting-label">消息通知</div>
+            <div class="setting-desc">收到评论和点赞时提醒</div>
+          </div>
+          <div class="toggle active" onclick="this.classList.toggle('active')"></div>
+        </div>
+        <div class="settings-divider"></div>
+        <div class="setting-row">
+          <div class="setting-left">
+            <div class="setting-label">修改密码</div>
+            <div class="setting-desc">上次修改于30天前</div>
+          </div>
+          <button class="setting-btn" style="background:transparent;border:1px solid var(--border);color:var(--text-1);">前往修改 &rarr;</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Expanded overlay -->
+<div class="expanded-overlay" id="expandedOverlay" onclick="if(event.target===this)closeExpanded()">
+  <div class="expanded-panel">
+    <div class="expanded-header">
+      <div class="expanded-title" id="expandedTitle"></div>
+      <button class="expanded-close" onclick="closeExpanded()">✕</button>
+    </div>
+    <div id="expandedContent"></div>
+  </div>
+</div>
+
+<script>
+// Stars
+(function() {
+  const c = document.getElementById('stars');
+  for (let i = 0; i < 120; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    const size = Math.random() * 2.5 + 0.5;
+    s.style.cssText = `width:${size}px;height:${size}px;top:${Math.random()*100}%;left:${Math.random()*100}%;animation-delay:${Math.random()*3}s;animation-duration:${2+Math.random()*3}s`;
+    c.appendChild(s);
+  }
+})();
+
+// Animated counters
+function animateCounters() {
+  document.querySelectorAll('[data-target]').forEach(el => {
+    const target = parseInt(el.dataset.target);
+    const duration = 1200;
+    const start = performance.now();
+    function tick(now) {
+      const elapsed = now - start;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      el.textContent = Math.floor(target * eased);
+      if (progress < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  });
+}
+
+// Run counters when visible
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { animateCounters(); observer.disconnect(); } });
+}, { threshold: 0.3 });
+observer.observe(document.querySelector('.profile-header'));
+
+// Mock data
+const posts = [
+  { body: '有时候觉得，孤独不是身边没有人，而是心里的话找不到能说的人。深夜的城市灯火辉煌，却照不亮内心的角落。', time: '2小时前', likes: 42, comments: 8, color: 'b1' },
+  { body: '同事把咖啡倒在了老板的键盘上，整个办公室都安静了。然后老板说："这是我喝过最贵的咖啡。"', time: '5小时前', likes: 128, comments: 23, color: 'b2' },
+  { body: '最近发现费曼学习法真的很有效。把学到的东西用最简单的话解释给别人听，如果对方能理解，说明你真的学会了。', time: '昨天', likes: 89, comments: 15, color: 'b3' },
+  { body: '远程工作一年了，最大的感受是自律比能力更重要。没有了打卡的约束，全靠自己管理时间。', time: '2天前', likes: 67, comments: 12, color: 'b4' },
+  { body: '《星际穿越》重刷了第三遍，每次看都有新的感悟。关于时间、爱和人类的命运，诺兰把宏大和细腻完美结合。', time: '3天前', likes: 156, comments: 31, color: 'b5' },
+  { body: '一个人去了山里的小村庄，没有信号，没有网络，只有蓝天白云和清澈的溪水。', time: '4天前', likes: 203, comments: 19, color: 'b6' },
+];
+
+const allComments = [
+  { text: '说得太对了，孤独是一种很微妙的感觉，不是寂寞而是一种无法言说的距离感。', post: '深夜独白：关于孤独', time: '1小时前' },
+  { text: '哈哈哈老板的反应绝了！这种时刻真的只想装作不存在。', post: '公司搞笑事', time: '3小时前' },
+  { text: '费曼学习法确实好用，我也在实践。补充一点：写博客也是一种很好的输出方式。', post: '分享学习方法', time: '5小时前' },
+  { text: '远程工作的核心确实是自律。建议试试番茄工作法。', post: '远程工作感悟', time: '昨天' },
+  { text: '诺兰的片子就是这样，每一帧都值得品味。', post: '推荐电影', time: '2天前' },
+  { text: '好羡慕！请问具体是哪里呀？', post: '周末美景', time: '3天前' },
+];
+
+// Render mini posts (latest 4)
+function renderMiniPosts() {
+  const el = document.getElementById('miniPosts');
+  el.innerHTML = posts.slice(0, 4).map(p => `
+    <div class="mini-post ${p.color}">
+      <div class="mini-post-header">
+        <div class="mini-post-avatar">👤</div>
+        <div class="mini-post-name">星际旅行者 #4827</div>
+        <div class="mini-post-time">${p.time}</div>
+      </div>
+      <div class="mini-post-body">${p.body}</div>
+      <div class="mini-post-footer">
+        <span>❤️ ${p.likes}</span>
+        <span>💬 ${p.comments}</span>
+        <span>👁 ${Math.floor(p.likes * 3.2)}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+// Render mini comments (latest 3)
+function renderMiniComments() {
+  const el = document.getElementById('miniComments');
+  el.innerHTML = allComments.slice(0, 3).map(c => `
+    <div class="mini-comment">
+      <div class="mini-comment-text">${c.text}</div>
+      <div class="mini-comment-meta">
+        <span>${c.time}</span>
+        <a class="mini-comment-link" href="#">📎 ${c.post}</a>
+      </div>
+    </div>
+  `).join('');
+}
+
+// Render bookmark grid (2x2)
+function renderBookmarks() {
+  const el = document.getElementById('bookmarkGrid');
+  const colors = ['b1','b3','b5','b6'];
+  el.innerHTML = posts.slice(0, 4).map((p, i) => `
+    <div class="bookmark-mini ${colors[i]}">
+      <div class="bookmark-mini-body">${p.body}</div>
+      <div class="bookmark-mini-footer">
+        <span>❤️ ${p.likes}</span>
+        <span>💬 ${p.comments}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+// Expanded view
+function openExpanded(type) {
+  const overlay = document.getElementById('expandedOverlay');
+  const title = document.getElementById('expandedTitle');
+  const content = document.getElementById('expandedContent');
+
+  if (type === 'posts') {
+    title.textContent = '📝 全部发布';
+    content.innerHTML = '<div class="expanded-grid">' + posts.map(p => `
+      <div class="mini-post ${p.color}" style="margin:0">
+        <div class="mini-post-header">
+          <div class="mini-post-avatar">👤</div>
+          <div class="mini-post-name">星际旅行者 #4827</div>
+          <div class="mini-post-time">${p.time}</div>
+        </div>
+        <div class="mini-post-body" style="-webkit-line-clamp:4">${p.body}</div>
+        <div class="mini-post-footer">
+          <span>❤️ ${p.likes}</span><span>💬 ${p.comments}</span>
+        </div>
+      </div>
+    `).join('') + '</div>';
+  } else if (type === 'comments') {
+    title.textContent = '💬 全部评论';
+    content.innerHTML = '<div class="mini-comments">' + allComments.map(c => `
+      <div class="mini-comment">
+        <div class="mini-comment-text">${c.text}</div>
+        <div class="mini-comment-meta">
+          <span>${c.time}</span>
+          <a class="mini-comment-link" href="#">📎 ${c.post}</a>
+        </div>
+      </div>
+    `).join('') + '</div>';
+  } else if (type === 'bookmarks') {
+    title.textContent = '⭐ 全部收藏';
+    const colors = ['b1','b3','b5','b6','b2','b4'];
+    content.innerHTML = '<div class="expanded-grid">' + posts.map((p, i) => `
+      <div class="mini-post ${colors[i]}" style="margin:0">
+        <div class="mini-post-header">
+          <div class="mini-post-avatar">👤</div>
+          <div class="mini-post-name">匿名用户 #${1000+i*317}</div>
+          <div class="mini-post-time">${p.time}</div>
+        </div>
+        <div class="mini-post-body" style="-webkit-line-clamp:4">${p.body}</div>
+        <div class="mini-post-footer">
+          <span>❤️ ${p.likes}</span><span>💬 ${p.comments}</span>
+        </div>
+      </div>
+    `).join('') + '</div>';
+  }
+
+  overlay.classList.add('active');
+}
+
+function closeExpanded() {
+  document.getElementById('expandedOverlay').classList.remove('active');
+}
+
+// ESC to close
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeExpanded(); });
+
+renderMiniPosts();
+renderMiniComments();
+renderBookmarks();
+</script>
+</body>
+</html>
