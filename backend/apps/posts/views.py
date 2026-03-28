@@ -1,8 +1,9 @@
 from datetime import timedelta
 from io import BytesIO
 
-from django.db.models import Count, Q
+from django.db.models import Case, Count, ExpressionWrapper, F, FloatField, IntegerField, Q, Value, When
 from django.core.files.base import ContentFile
+from django.db.models.functions import Length, Lower, Replace, StrIndex
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
@@ -14,6 +15,7 @@ from apps.interactions.models import Notification
 from common.exceptions import APIResponse
 from common.pagination import StandardPagination
 from common.permissions import IsVerifiedUser
+from common.unread_cache import invalidate_notification_unread
 from apps.moderation.services import check_content
 
 from .models import Announcement, Poll, PollOption, PollVote, Post, PostImage
@@ -28,9 +30,6 @@ from .serializers import (
 
 def _apply_filters(queryset, request):
     search = request.query_params.get('search', '').strip()
-    if search:
-        queryset = queryset.filter(content__icontains=search)
-
     tag = request.query_params.get('tag')
     if tag:
         queryset = queryset.filter(tag=tag)
@@ -42,6 +41,60 @@ def _apply_filters(queryset, request):
         queryset = queryset.filter(created_at__gte=timezone.now() - timedelta(days=7))
     elif time_filter == 'month':
         queryset = queryset.filter(created_at__gte=timezone.now() - timedelta(days=30))
+
+    return queryset, search
+
+
+def _apply_search_ranking(queryset, search):
+    normalized = search.lower()
+    keyword_length = max(len(normalized), 1)
+    lower_content = Lower('content')
+
+    queryset = queryset.annotate(
+        first_hit=StrIndex(lower_content, Value(normalized)),
+        occurrence_count=ExpressionWrapper(
+            (Length(lower_content) - Length(Replace(lower_content, Value(normalized), Value('')))) / Value(keyword_length),
+            output_field=FloatField(),
+        ),
+    ).filter(first_hit__gt=0)
+
+    queryset = queryset.annotate(
+        exact_match_boost=Case(
+            When(content__iexact=search, then=Value(180)),
+            default=Value(0),
+            output_field=IntegerField(),
+        ),
+        prefix_match_boost=Case(
+            When(content__istartswith=search, then=Value(90)),
+            default=Value(0),
+            output_field=IntegerField(),
+        ),
+        position_boost=Case(
+            When(first_hit=1, then=Value(80)),
+            When(first_hit__gt=1, first_hit__lte=20, then=Value(50)),
+            When(first_hit__gt=20, first_hit__lte=60, then=Value(30)),
+            When(first_hit__gt=60, then=Value(10)),
+            default=Value(0),
+            output_field=IntegerField(),
+        ),
+    )
+
+    queryset = queryset.annotate(
+        relevance_score=ExpressionWrapper(
+            F('exact_match_boost')
+            + F('prefix_match_boost')
+            + F('position_boost')
+            + (F('occurrence_count') * Value(24.0))
+            + (F('comment_count') * Value(3.0))
+            + (F('like_count') * Value(2.0))
+            + F('favorite_count'),
+            output_field=FloatField(),
+        ),
+    ).order_by(
+        '-relevance_score',
+        'first_hit',
+        '-created_at',
+    )
 
     return queryset
 
@@ -120,6 +173,7 @@ def _save_poll(post, request):
 def _notify_admins(title, content, link='/admin/workbench/review-queue/'):
     from apps.users.models import User
 
+    admins = list(User.objects.filter(is_staff=True, is_active=True))
     notifications = [
         Notification(
             user=admin,
@@ -128,10 +182,12 @@ def _notify_admins(title, content, link='/admin/workbench/review-queue/'):
             content=content[:300],
             link=link,
         )
-        for admin in User.objects.filter(is_staff=True, is_active=True)
+        for admin in admins
     ]
     if notifications:
         Notification.objects.bulk_create(notifications)
+        for admin in admins:
+            invalidate_notification_unread(admin.id)
 
 
 def _notify_author(author, title, content, link='/profile'):
@@ -142,6 +198,7 @@ def _notify_author(author, title, content, link='/profile'):
         content=content[:300],
         link=link,
     )
+    invalidate_notification_unread(author.id)
 
 
 def _resolve_post_audit_fields(audit):
@@ -214,10 +271,15 @@ def post_list(request):
         status__in=['normal', 'ai_suspect'],
     ).select_related('identity').prefetch_related('images')
 
-    queryset = _apply_filters(queryset, request)
+    queryset, search = _apply_filters(queryset, request)
+
+    if search:
+        queryset = _apply_search_ranking(queryset, search)
 
     sort = request.query_params.get('sort', 'latest')
-    if sort == 'hot':
+    if search:
+        pass
+    elif sort == 'hot':
         queryset = queryset.extra(
             select={'hot_score': 'like_count * 2 + comment_count * 3 + favorite_count * 1'},
         ).order_by('-is_pinned', '-hot_score', '-created_at')

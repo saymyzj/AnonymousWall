@@ -17,8 +17,8 @@ from common.admin_views import (
     user_center_view,
 )
 
-admin.site.site_header = 'AnonymousWall 管理后台'
-admin.site.site_title = 'AnonymousWall Admin'
+admin.site.site_header = '匿名宇宙 管理后台'
+admin.site.site_title = '匿名宇宙 Admin'
 admin.site.index_title = '内容审核与运营面板'
 admin.site.index_template = 'admin/home.html'
 
@@ -26,7 +26,7 @@ admin.site.index_template = 'admin/home.html'
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def health_check(request):
-    return APIResponse(data={'status': 'ok'}, message='AnonymousWall API is running')
+    return APIResponse(data={'status': 'ok'}, message='匿名宇宙 API is running')
 
 
 urlpatterns = [

@@ -100,7 +100,7 @@ async function drawCard() {
 
   ctx.fillStyle = '#18152A'
   ctx.font = '700 28px sans-serif'
-  ctx.fillText('AnonymousWall', cardX + 48, cardY + cardH - 92)
+  ctx.fillText('匿名宇宙', cardX + 48, cardY + cardH - 92)
 
   ctx.fillStyle = '#6A6680'
   ctx.font = '400 24px sans-serif'

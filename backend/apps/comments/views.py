@@ -8,6 +8,7 @@ from django.db.models import F
 from django.utils import timezone
 from common.exceptions import APIResponse
 from common.pagination import StandardPagination
+from common.unread_cache import invalidate_notification_unread
 from .models import Comment
 from .serializers import CommentSerializer, CreateCommentSerializer
 from apps.posts.models import Post
@@ -31,6 +32,7 @@ def _build_user_map(post_id):
 def _notify_admins(title, content, link='/admin/workbench/review-queue/'):
     from apps.users.models import User
 
+    admins = list(User.objects.filter(is_staff=True, is_active=True))
     notifications = [
         Notification(
             user=admin,
@@ -39,10 +41,12 @@ def _notify_admins(title, content, link='/admin/workbench/review-queue/'):
             content=content[:300],
             link=link,
         )
-        for admin in User.objects.filter(is_staff=True, is_active=True)
+        for admin in admins
     ]
     if notifications:
         Notification.objects.bulk_create(notifications)
+        for admin in admins:
+            invalidate_notification_unread(admin.id)
 
 
 def _notify_author(author, title, content, link='/profile'):
@@ -53,6 +57,7 @@ def _notify_author(author, title, content, link='/profile'):
         content=content[:300],
         link=link,
     )
+    invalidate_notification_unread(author.id)
 
 
 def _resolve_comment_audit_fields(audit):
@@ -205,6 +210,7 @@ def create_comment(request, post_id):
             content=serializer.validated_data['content'][:300],
             link=f'/post/{post.id}#comments',
         )
+        invalidate_notification_unread(post.author_id)
 
     user_map = _build_user_map(post_id)
     result = CommentSerializer(

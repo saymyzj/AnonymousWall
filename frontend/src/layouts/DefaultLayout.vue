@@ -7,7 +7,7 @@
       <div class="nav-left">
         <router-link to="/" class="logo" aria-label="返回首页">
           <span class="logo-icon">🫧</span>
-          <span class="logo-text">AnonymousWall</span>
+          <span class="logo-text">匿名宇宙</span>
         </router-link>
       </div>
 
@@ -248,12 +248,9 @@ async function loadUnreadCounts() {
     return
   }
   try {
-    const [conversationRes, notificationRes] = await Promise.all([
-      messagesApi.getConversations(),
-      messagesApi.getNotifications(),
-    ])
-    unreadMessages.value = conversationRes.data.data.message_unread_count || 0
-    unreadNotifications.value = (notificationRes.data.data || []).filter((item: any) => !item.is_read).length
+    const res = await messagesApi.getUnreadSummary()
+    unreadMessages.value = res.data.data.messages || 0
+    unreadNotifications.value = res.data.data.notifications || 0
   } catch {
     unreadNotifications.value = 0
     unreadMessages.value = 0

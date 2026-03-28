@@ -10,6 +10,13 @@ from apps.comments.models import Comment
 from apps.posts.models import Post
 from common.exceptions import APIResponse
 from common.permissions import IsVerifiedUser
+from common.unread_cache import (
+    get_unread_summary,
+    invalidate_message_unread,
+    invalidate_notification_unread,
+    set_message_unread_count,
+    set_notification_unread_count,
+)
 
 from .models import Conversation, Favorite, Like, Notification, PrivateMessage, Report
 from .serializers import ConversationSerializer, NotificationSerializer
@@ -56,6 +63,10 @@ def _create_notification(user, type_, title, content, link=''):
         content=content[:300],
         link=link,
     )
+    if type_ == 'message':
+        invalidate_message_unread(user.id)
+    else:
+        invalidate_notification_unread(user.id)
 
 
 @api_view(['POST'])
@@ -178,10 +189,17 @@ def notification_list(request):
     return APIResponse(data=NotificationSerializer(queryset, many=True).data)
 
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def unread_summary(request):
+    return APIResponse(data=get_unread_summary(request.user))
+
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def mark_notifications_read(request):
     request.user.notifications.filter(is_read=False).update(is_read=True, is_ignored=False)
+    set_notification_unread_count(request.user.id, 0)
     return APIResponse(message='已全部标记为已读')
 
 
@@ -195,6 +213,10 @@ def mark_notification_read(request, pk):
     notification.is_read = True
     notification.is_ignored = False
     notification.save(update_fields=['is_read', 'is_ignored'])
+    set_notification_unread_count(
+        request.user.id,
+        request.user.notifications.filter(is_read=False).count(),
+    )
     return APIResponse(message='已标记为已读')
 
 
@@ -204,23 +226,20 @@ def conversation_list(request):
     user_conversations = Conversation.objects.filter(
         Q(owner=request.user) | Q(participant=request.user)
     )
-    unread_messages = PrivateMessage.objects.filter(
-        conversation__in=user_conversations,
-        is_read=False,
-    ).exclude(sender=request.user).count()
     PrivateMessage.objects.filter(
         pk__in=PrivateMessage.objects.filter(
             conversation__in=user_conversations,
             is_read=False,
         ).exclude(sender=request.user).values('pk')
     ).update(is_read=True)
+    set_message_unread_count(request.user.id, 0)
     queryset = user_conversations.select_related('post', 'owner', 'participant')
     serializer = ConversationSerializer(queryset, many=True, context={'request': request})
-    unread_notifications = request.user.notifications.filter(is_read=False).count()
+    unread_notifications = get_unread_summary(request.user)['notifications']
     return APIResponse(data={
         'conversations': serializer.data,
         'notification_unread_count': unread_notifications,
-        'message_unread_count': unread_messages,
+        'message_unread_count': 0,
     })
 
 

@@ -41,7 +41,7 @@
     <div class="right-panel">
       <div class="form-wrapper">
         <div class="form-header">
-          <div class="form-logo">🫧 AnonymousWall</div>
+          <div class="form-logo">🫧 匿名宇宙</div>
           <div class="form-title">{{ mode === 'login' ? '欢迎回到宇宙' : '加入气泡宇宙' }}</div>
           <div class="form-subtitle">在这里，安全地说出你的心声。</div>
         </div>

@@ -9,6 +9,7 @@ from apps.posts.recommendation import get_recommendation_snapshot
 from apps.users.models import User
 from apps.interactions.models import Notification, Report
 from apps.moderation.models import AuditLog
+from common.unread_cache import invalidate_notification_unread
 
 from .admin_panel import (
     WORKBENCH_URLS,
@@ -292,6 +293,7 @@ def _finalize_target_action(target, action, request, reason):
         content=reason,
         link='/profile',
     )
+    invalidate_notification_unread(target.author_id)
 
     pending_reports = list(Report.objects.filter(target_type=target_type, target_id=target.id, status='pending').select_related('user'))
     Report.objects.filter(
@@ -310,6 +312,8 @@ def _finalize_target_action(target, action, request, reason):
             )
             for report in pending_reports
         ])
+        for report in pending_reports:
+            invalidate_notification_unread(report.user_id)
 
 
 def moderation_detail_view(request, target_type, target_id):

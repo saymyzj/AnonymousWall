@@ -1,6 +1,9 @@
 import api from './index'
 
 export const messagesApi = {
+  getUnreadSummary() {
+    return api.get('/messages/unread-summary/')
+  },
   getConversations() {
     return api.get('/messages/conversations/')
   },

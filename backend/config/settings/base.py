@@ -128,6 +128,11 @@ DEEPSEEK_MODEL = os.environ.get('DEEPSEEK_MODEL', 'deepseek-chat')
 DEEPSEEK_BASE_URL = os.environ.get('DEEPSEEK_BASE_URL', 'https://api.deepseek.com')
 DEEPSEEK_TIMEOUT = int(os.environ.get('DEEPSEEK_TIMEOUT', '25'))
 
+# Redis
+REDIS_URL = os.environ.get('REDIS_URL', 'redis://127.0.0.1:6379/0')
+REDIS_TIMEOUT = float(os.environ.get('REDIS_TIMEOUT', '0.5'))
+REDIS_UNREAD_TTL = int(os.environ.get('REDIS_UNREAD_TTL', '120'))
+
 # SimpleUI
 SIMPLEUI_HOME_INFO = False
 SIMPLEUI_ANALYSIS = False
