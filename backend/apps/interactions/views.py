@@ -174,27 +174,28 @@ def create_report(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def notification_list(request):
-    queryset = request.user.notifications.filter(is_ignored=False).order_by('-created_at')[:100]
+    queryset = request.user.notifications.order_by('-created_at')[:100]
     return APIResponse(data=NotificationSerializer(queryset, many=True).data)
 
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def mark_notifications_read(request):
-    request.user.notifications.filter(is_read=False, is_ignored=False).update(is_read=True)
+    request.user.notifications.filter(is_read=False).update(is_read=True, is_ignored=False)
     return APIResponse(message='已全部标记为已读')
 
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def ignore_notification(request, pk):
+def mark_notification_read(request, pk):
     try:
         notification = request.user.notifications.get(pk=pk)
     except Notification.DoesNotExist:
         return APIResponse(code=404, message='通知不存在', status_code=404)
-    notification.is_ignored = True
-    notification.save(update_fields=['is_ignored'])
-    return APIResponse(message='已忽略')
+    notification.is_read = True
+    notification.is_ignored = False
+    notification.save(update_fields=['is_read', 'is_ignored'])
+    return APIResponse(message='已标记为已读')
 
 
 @api_view(['GET'])
@@ -215,7 +216,7 @@ def conversation_list(request):
     ).update(is_read=True)
     queryset = user_conversations.select_related('post', 'owner', 'participant')
     serializer = ConversationSerializer(queryset, many=True, context={'request': request})
-    unread_notifications = request.user.notifications.filter(is_read=False, is_ignored=False).count()
+    unread_notifications = request.user.notifications.filter(is_read=False).count()
     return APIResponse(data={
         'conversations': serializer.data,
         'notification_unread_count': unread_notifications,

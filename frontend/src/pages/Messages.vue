@@ -47,7 +47,7 @@
                 :key="notification.id"
                 class="lp-notif"
                 :class="{ unread: !notification.is_read, active: activeNotificationId === notification.id }"
-                @click="activeNotificationId = notification.id"
+                @click="selectNotification(notification)"
               >
                 <div class="lp-icon" :class="notification.type">{{ notification.icon }}</div>
                 <div class="lp-text">
@@ -99,14 +99,21 @@
 
         <template v-else>
           <div class="detail-notif">
-            <GlassCard v-if="currentNotification" class="notif-detail-card">
+            <div v-if="currentNotification" class="notif-detail-inner">
               <div class="notif-title">{{ currentNotification.title }}</div>
               <p class="notif-body">{{ currentNotification.content }}</p>
               <div class="notif-actions">
                 <router-link class="ghost-pill" :to="currentNotification.link || '/'">查看相关内容</router-link>
-                <button class="ghost-pill" type="button" @click="ignoreNotification(currentNotification.id)">忽略</button>
+                <button
+                  class="ghost-pill"
+                  type="button"
+                  :disabled="currentNotification.is_read"
+                  @click="markNotificationAsRead(currentNotification.id)"
+                >
+                  {{ currentNotification.is_read ? '已读' : '标为已读' }}
+                </button>
               </div>
-            </GlassCard>
+            </div>
             <div v-else class="empty-detail">没有可查看的通知。</div>
           </div>
         </template>
@@ -118,7 +125,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import GlassCard from '../components/GlassCard.vue'
 import { messagesApi } from '../api/messages'
 import { useAuthStore } from '../stores/auth'
 
@@ -164,9 +170,18 @@ async function markAllAsRead() {
   await loadData()
 }
 
-async function ignoreNotification(id: number) {
-  await messagesApi.ignoreNotification(id)
-  await loadData()
+async function markNotificationAsRead(id: number) {
+  const target = notifications.value.find((item) => item.id === id)
+  if (!target || target.is_read) return
+  await messagesApi.markNotificationRead(id)
+  target.is_read = true
+}
+
+async function selectNotification(notification: any) {
+  activeNotificationId.value = notification.id
+  if (!notification.is_read) {
+    await markNotificationAsRead(notification.id)
+  }
 }
 
 async function replyMessage() {
@@ -209,16 +224,12 @@ onMounted(loadData)
 .split-container {
   display: flex;
   min-height: calc(100vh - 120px);
-  border-radius: 28px;
   overflow: hidden;
-  border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.02);
 }
 
 .left-panel {
-  width: 320px;
+  width: 360px;
   flex-shrink: 0;
-  background: rgba(11, 13, 26, 0.5);
   border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
@@ -237,7 +248,7 @@ onMounted(loadData)
   gap: 4px;
   padding: 3px;
   border-radius: var(--radius-pill);
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--bg-card);
 }
 
 .left-tab {
@@ -299,7 +310,7 @@ onMounted(loadData)
   width: 100%;
   padding: 12px 16px;
   border: 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid var(--bg-card);
   background: transparent;
   text-align: left;
   cursor: pointer;
@@ -480,7 +491,7 @@ onMounted(loadData)
 
 .chat-msg.them {
   align-self: flex-start;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--bg-card);
   border: 1px solid var(--border);
   border-bottom-left-radius: 6px;
 }
@@ -503,7 +514,7 @@ onMounted(loadData)
   padding: 14px;
   border-radius: 16px;
   border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--bg-card);
   color: var(--text-1);
   resize: none;
 }
@@ -519,15 +530,13 @@ onMounted(loadData)
 .detail-notif {
   flex: 1;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  padding: 24px;
+  padding: 40px 32px;
 }
 
-.notif-detail-card {
-  width: min(520px, 100%);
-  padding: 28px;
-  border-radius: 24px;
+.notif-detail-inner {
+  width: min(560px, 100%);
 }
 
 .notif-title {
@@ -546,6 +555,11 @@ onMounted(loadData)
   display: flex;
   gap: 12px;
   margin-top: 18px;
+}
+
+.notif-actions .ghost-pill:disabled {
+  cursor: default;
+  opacity: 0.6;
 }
 
 @media (max-width: 768px) {

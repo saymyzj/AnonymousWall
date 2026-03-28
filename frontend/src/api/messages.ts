@@ -19,7 +19,7 @@ export const messagesApi = {
   markAllRead() {
     return api.post('/notifications/read-all/')
   },
-  ignoreNotification(id: number) {
-    return api.post(`/notifications/${id}/ignore/`)
+  markNotificationRead(id: number) {
+    return api.post(`/notifications/${id}/read/`)
   },
 }
