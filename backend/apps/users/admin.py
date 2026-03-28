@@ -2,11 +2,14 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.utils import timezone
 from datetime import timedelta
+from common.admin_redirects import WorkbenchRedirectAdminMixin
 from .models import User, AnonymousIdentity
 
 
 @admin.register(User)
-class UserAdmin(BaseUserAdmin):
+class UserAdmin(WorkbenchRedirectAdminMixin, BaseUserAdmin):
+    workbench_changelist_url = '/admin/workbench/users/'
+
     list_display = ['email', 'student_id', 'real_name', 'verification_status', 'date_joined', 'is_banned', 'ban_until', 'post_count', 'violation_count', 'is_active', 'is_staff']
     list_filter = ['is_verified', 'is_banned', 'is_active', 'is_staff', 'date_joined']
     search_fields = ['email', 'student_id', 'real_name']
@@ -58,6 +61,9 @@ class UserAdmin(BaseUserAdmin):
     @admin.action(description='解除禁言')
     def unban(self, request, queryset):
         queryset.update(is_banned=False, ban_until=None)
+
+    def get_workbench_object_url(self, object_id):
+        return f'/admin/workbench/users/{object_id}/'
 
 
 @admin.register(AnonymousIdentity)

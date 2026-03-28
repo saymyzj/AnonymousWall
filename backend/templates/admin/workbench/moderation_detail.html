@@ -17,7 +17,6 @@
         <div class="wb-table-content" style="font-size:14px; line-height:1.8;">{{ content_text }}</div>
         <div class="wb-table-meta">AI: {{ target.ai_decision }} | AI 原因: {{ target.ai_reason|default:"无" }} | 审核来源: {{ target.moderation_source }} | 截止: {{ target.review_deadline|default:"无" }}</div>
         <div class="wb-actions">
-          <a class="wb-action ghost" href="{{ raw_link }}">原始表单</a>
           <a class="wb-action ghost" href="{{ user_link }}">用户详情</a>
         </div>
       </div>

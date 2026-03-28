@@ -122,9 +122,11 @@ import PostCard from '../components/PostCard.vue'
 import GlassCard from '../components/GlassCard.vue'
 import { postsApi } from '../api/posts'
 import { usePostsStore } from '../stores/posts'
+import { useToast } from '../composables/useToast'
 
 const router = useRouter()
 const postsStore = usePostsStore()
+const toast = useToast()
 const loadMoreRef = ref<HTMLElement>()
 const heroSearchQuery = ref('')
 const pinnedPosts = ref<any[]>([])
@@ -192,6 +194,7 @@ onMounted(() => {
   const savedFlash = sessionStorage.getItem('anonymouswall-flash')
   if (savedFlash) {
     flashMessage.value = savedFlash
+    toast.success(savedFlash)
     sessionStorage.removeItem('anonymouswall-flash')
   }
   postsStore.resetState()
@@ -250,7 +253,7 @@ onUnmounted(() => {
   font-size: 44px;
   line-height: 1.12;
   font-weight: 800;
-  background: linear-gradient(135deg, #fff, rgba(255, 255, 255, 0.6));
+  background: linear-gradient(135deg, var(--text-1), var(--text-2));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -271,8 +274,8 @@ onUnmounted(() => {
   margin: 30px auto 0;
   padding: 6px 6px 6px 22px;
   border-radius: var(--radius-pill);
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--glass-bg);
+  border: 1px solid var(--border);
   box-shadow: var(--shadow-soft);
 }
 
@@ -372,7 +375,7 @@ onUnmounted(() => {
   margin-bottom: 10px;
   padding: 4px 10px;
   border-radius: var(--radius-pill);
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--bg-card-hover);
   font-size: 0.75rem;
   font-weight: 600;
 }
@@ -405,8 +408,8 @@ onUnmounted(() => {
 .chip {
   min-height: 40px;
   padding: 0 18px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  background: var(--bg-card);
   color: var(--text-2);
 }
 
@@ -427,8 +430,8 @@ onUnmounted(() => {
   gap: 4px;
   padding: 4px;
   border-radius: var(--radius-pill);
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--bg-card);
+  border: 1px solid var(--border-soft);
 }
 
 .pill {
@@ -444,7 +447,7 @@ onUnmounted(() => {
 }
 
 .pill.active {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--bg-card-hover);
   color: var(--text-1);
 }
 
@@ -492,7 +495,7 @@ onUnmounted(() => {
   width: 32px;
   height: 32px;
   margin: 0 auto 16px;
-  border: 3px solid rgba(255, 255, 255, 0.08);
+  border: 3px solid var(--border);
   border-top-color: var(--brand);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;

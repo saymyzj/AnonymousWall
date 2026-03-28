@@ -157,31 +157,6 @@ def get_workbench_navigation(active_key, metrics):
                 },
             ],
         },
-        {
-            'title': '原始表单',
-            'items': [
-                {
-                    'label': '帖子管理',
-                    'url': '/admin/posts/post/',
-                    'is_active': False,
-                },
-                {
-                    'label': '评论管理',
-                    'url': '/admin/comments/comment/',
-                    'is_active': False,
-                },
-                {
-                    'label': '用户管理',
-                    'url': '/admin/users/user/',
-                    'is_active': False,
-                },
-                {
-                    'label': '敏感词管理',
-                    'url': '/admin/moderation/sensitiveword/',
-                    'is_active': False,
-                },
-            ],
-        },
     ]
 
 
@@ -430,11 +405,9 @@ def get_content_center_snapshot(kind='post', status='', search='', limit=12):
     for row in rows:
         if kind == 'post':
             meta = f'作者：{row.author.email} ｜ 标签：{row.tag} ｜ 风险：{row.get_risk_level_display()}'
-            raw_link = f'/admin/posts/post/{row.id}/change/'
             title = f'帖子 #{row.id} · {row.tag}'
         else:
             meta = f'作者：{row.author.email} ｜ 所属帖子 #{row.post_id} ｜ 风险：{row.get_risk_level_display()}'
-            raw_link = f'/admin/comments/comment/{row.id}/change/'
             title = f'评论 #{row.id} · 帖子 #{row.post_id}'
 
         items.append({
@@ -448,7 +421,6 @@ def get_content_center_snapshot(kind='post', status='', search='', limit=12):
             'ai_reason': row.ai_reason or '等待人工判断',
             'report_count': report_counts.get(row.id, 0),
             'target_link': f'/admin/workbench/moderation/{kind}/{row.id}/',
-            'raw_link': raw_link,
         })
 
     primary_links = [
@@ -520,7 +492,7 @@ def get_user_detail_snapshot(user):
             'status': post.get_status_display(),
             'risk_level': post.risk_level,
             'reason': post.moderation_reason or post.ai_reason or '正常内容',
-            'link': f'/admin/posts/post/{post.id}/change/',
+            'link': f'/admin/workbench/moderation/post/{post.id}/',
         }
         for post in user.posts.order_by('-created_at')[:8]
     ]
@@ -531,7 +503,7 @@ def get_user_detail_snapshot(user):
             'status': comment.get_status_display(),
             'risk_level': getattr(comment, 'risk_level', 'none'),
             'reason': getattr(comment, 'moderation_reason', '') or comment.ai_reason or '正常内容',
-            'link': f'/admin/comments/comment/{comment.id}/change/',
+            'link': f'/admin/workbench/moderation/comment/{comment.id}/',
         }
         for comment in user.comments.order_by('-created_at')[:8]
     ]
@@ -589,7 +561,6 @@ def get_moderation_detail_snapshot(target_type, target_id):
         'audits': audits,
         'author': author,
         'author_stats': author_stats,
-        'raw_link': f'/admin/{target_type + "s" if target_type == "post" else "comments"}/{target_type}/{target.id}/change/',
         'user_link': f'/admin/workbench/users/{author.id}/',
     }
 

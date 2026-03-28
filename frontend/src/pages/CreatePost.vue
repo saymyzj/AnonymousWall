@@ -188,9 +188,11 @@ import { useRouter } from 'vue-router'
 import { postsApi } from '../api/posts'
 import { useAuthStore } from '../stores/auth'
 import { getIdentityInitial, tagEmoji } from '../utils/presentation'
+import { useToast } from '../composables/useToast'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const toast = useToast()
 
 const DRAFT_KEY = 'anonymouswall-create-draft'
 const FLASH_KEY = 'anonymouswall-flash'
@@ -241,8 +243,11 @@ const canPublish = computed(() => content.value.trim() && tag.value)
 const currentTagLabel = computed(() => `${tagEmoji(tag.value)} ${tag.value}`)
 const filledPreviewImages = computed(() => previewImages.value.filter(Boolean) as string[])
 
-function showNotice(message: string) {
+function showNotice(message: string, type: 'success' | 'error' | 'info' = 'info') {
   notice.value = message
+  if (type === 'error') toast.error(message)
+  else if (type === 'success') toast.success(message)
+  else toast.info(message)
   window.setTimeout(() => {
     if (notice.value === message) notice.value = ''
   }, 2200)
@@ -362,8 +367,8 @@ if (savedDraft) {
   min-height: calc(100vh - 180px);
   border-radius: 28px;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  background: var(--bg-soft);
+  border: 1px solid var(--border-soft);
 }
 
 .editor,
@@ -372,7 +377,7 @@ if (savedDraft) {
 }
 
 .editor {
-  border-right: 1px solid rgba(255, 255, 255, 0.04);
+  border-right: 1px solid var(--border-soft);
 }
 
 .editor-title {
@@ -410,7 +415,7 @@ if (savedDraft) {
   gap: 12px;
   padding: 12px 16px;
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--bg-soft);
   border: 1px solid var(--border);
 }
 
@@ -456,7 +461,7 @@ textarea {
   padding: 16px;
   border-radius: 16px;
   border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--bg-soft);
   color: var(--text-1);
   line-height: 1.8;
   resize: none;
@@ -501,7 +506,7 @@ textarea:focus {
   padding: 0 16px;
   border-radius: var(--radius-pill);
   border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--bg-soft);
   color: var(--text-2);
 }
 
@@ -522,7 +527,7 @@ textarea:focus {
 
 .cdot.active {
   border-color: #fff;
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.15);
+  box-shadow: 0 0 10px var(--border-hover);
 }
 
 .img-row {
@@ -535,7 +540,7 @@ textarea:focus {
   width: 100px;
   height: 100px;
   border-radius: 16px;
-  border: 2px dashed rgba(255, 255, 255, 0.08);
+  border: 2px dashed var(--bg-card-hover);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -587,7 +592,7 @@ textarea:focus {
 }
 
 .tgl-row + .tgl-row {
-  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  border-top: 1px solid var(--bg-card);
 }
 
 .tgl-txt {
@@ -601,7 +606,7 @@ textarea:focus {
   position: relative;
   border: 0;
   border-radius: 11px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--bg-card-hover);
 }
 
 .tgl::after {
@@ -647,7 +652,7 @@ textarea:focus {
   padding: 0 14px;
   border-radius: 14px;
   border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--bg-card);
   color: var(--text-1);
 }
 
@@ -684,7 +689,7 @@ textarea:focus {
   margin-bottom: 12px;
   padding: 4px 10px;
   border-radius: var(--radius-pill);
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--bg-card-hover);
   color: var(--text-2);
   font-size: 0.75rem;
   font-weight: 600;
@@ -713,7 +718,7 @@ textarea:focus {
   height: 60px;
   overflow: hidden;
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--bg-card-hover);
 }
 
 .p-img img {
@@ -727,7 +732,7 @@ textarea:focus {
   align-items: center;
   justify-content: space-between;
   padding-top: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid var(--border-soft);
 }
 
 .p-author {

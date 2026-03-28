@@ -131,7 +131,7 @@ def comment_list(request, post_id):
 
     queryset = Comment.objects.filter(
         post=post, status__in=['normal', 'ai_suspect']
-    ).select_related('parent').order_by('created_at')
+    ).select_related('parent', 'identity', 'parent__identity').order_by('created_at')
 
     user_map = _build_user_map(post_id)
 

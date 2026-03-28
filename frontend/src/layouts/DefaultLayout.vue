@@ -1,19 +1,10 @@
 <template>
   <div class="layout">
     <StarryBackground />
+    <ToastContainer />
 
     <nav class="navbar">
       <div class="nav-left">
-        <button
-          v-if="isDetailRoute"
-          class="icon-shell nav-back"
-          type="button"
-          aria-label="返回"
-          @click="goBack"
-        >
-          ←
-        </button>
-
         <router-link to="/" class="logo" aria-label="返回首页">
           <span class="logo-icon">🫧</span>
           <span class="logo-text">AnonymousWall</span>
@@ -112,7 +103,11 @@
     </nav>
 
     <main class="main-content" :class="{ compact: isDetailRoute }">
-      <router-view :key="route.fullPath" />
+      <router-view v-slot="{ Component }">
+        <Transition name="page-slide" appear>
+          <component :is="Component" :key="route.path" />
+        </Transition>
+      </router-view>
     </main>
 
     <button
@@ -133,6 +128,7 @@ import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { messagesApi } from '../api/messages'
 import StarryBackground from '../components/StarryBackground.vue'
+import ToastContainer from '../components/ToastContainer.vue'
 import { useTheme } from '../composables/useTheme'
 import { useAuthStore } from '../stores/auth'
 import { usePostsStore } from '../stores/posts'
@@ -176,8 +172,7 @@ const showFabButton = computed(
   () =>
     authStore.isLoggedIn &&
     authStore.isVerified &&
-    route.name !== 'CreatePost' &&
-    route.name !== 'Login',
+    isHomeRoute.value,
 )
 
 let heroObserver: IntersectionObserver | null = null
@@ -238,14 +233,6 @@ function handleLogout() {
   showUserMenu.value = false
   authStore.logout()
   router.push('/login')
-}
-
-function goBack() {
-  if (window.history.length > 1) {
-    router.back()
-    return
-  }
-  router.push('/')
 }
 
 function onScroll() {
@@ -319,7 +306,7 @@ onUnmounted(() => {
   height: var(--nav-height);
   padding: 0 36px;
   background: var(--nav-bg);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--border-soft);
   backdrop-filter: blur(24px) saturate(1.5);
   -webkit-backdrop-filter: blur(24px) saturate(1.5);
 }
@@ -365,8 +352,8 @@ onUnmounted(() => {
   gap: 4px;
   padding: 4px;
   border-radius: var(--radius-pill);
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--bg-card);
+  border: 1px solid var(--border-soft);
 }
 
 .nav-tab {
@@ -398,8 +385,8 @@ onUnmounted(() => {
   height: 40px;
   padding: 0 14px;
   border-radius: var(--radius-pill);
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
 }
 
 .nav-search:focus-within {
@@ -427,8 +414,8 @@ onUnmounted(() => {
 .search-clear,
 .icon-shell,
 .avatar-btn {
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  background: var(--bg-card);
   color: var(--text-2);
 }
 
@@ -446,14 +433,14 @@ onUnmounted(() => {
   width: 24px;
   height: 24px;
   border: 0;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--bg-card-hover);
 }
 
 .search-clear:hover,
 .icon-shell:hover {
   color: var(--text-1);
   border-color: var(--border-hover);
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--bg-card-hover);
 }
 
 .icon-shell {
@@ -507,7 +494,7 @@ onUnmounted(() => {
 
 .nav-btn.ghost:hover {
   color: var(--text-1);
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--bg-card);
 }
 
 .nav-btn.primary {
@@ -531,8 +518,8 @@ onUnmounted(() => {
   min-width: 180px;
   padding: 8px;
   border-radius: 18px;
-  background: rgba(18, 21, 42, 0.88);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
   box-shadow: var(--shadow-floating);
   backdrop-filter: blur(24px);
 }
@@ -551,7 +538,7 @@ onUnmounted(() => {
 
 .dropdown-item:hover {
   color: var(--brand);
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--bg-card);
 }
 
 .dropdown-item.logout:hover {
@@ -611,28 +598,39 @@ onUnmounted(() => {
 .fade-enter-active,
 .fade-leave-active,
 .dropdown-enter-active,
-.dropdown-leave-active,
-.page-fade-enter-active,
-.page-fade-leave-active {
+.dropdown-leave-active {
   transition: all 0.24s ease;
 }
 
 .fade-enter-from,
 .fade-leave-to,
-.page-fade-enter-from,
-.page-fade-leave-to,
 .dropdown-enter-from,
 .dropdown-leave-to {
   opacity: 0;
 }
 
-.page-fade-enter-from {
-  transform: translateY(8px);
-}
-
 .dropdown-enter-from,
 .dropdown-leave-to {
   transform: translateY(-8px) scale(0.96);
+}
+
+.page-slide-enter-active {
+  transition: opacity 0.28s ease, transform 0.28s ease;
+}
+
+.page-slide-leave-active {
+  transition: opacity 0.15s ease;
+  position: absolute;
+  width: 100%;
+}
+
+.page-slide-enter-from {
+  opacity: 0;
+  transform: translateY(12px);
+}
+
+.page-slide-leave-to {
+  opacity: 0;
 }
 
 @media (max-width: 900px) {

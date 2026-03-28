@@ -23,7 +23,7 @@
 
         <div class="comment-actions">
           <button class="act-btn" :class="{ active: comment.is_liked }" type="button" @click="$emit('like', comment.id)">
-            {{ comment.is_liked ? '❤️' : '♡' }}
+            <span :class="{ 'animate-bounce-in': false }">{{ comment.is_liked ? '❤️' : '♡' }}</span>
             <span>{{ comment.like_count }}</span>
           </button>
           <button class="act-btn" type="button" @click="$emit('reply', comment)">💬 回复</button>
@@ -46,14 +46,11 @@ defineEmits(['reply', 'like', 'delete', 'report'])
 
 <style scoped>
 .comment-item {
-  margin-bottom: 24px;
-  padding-bottom: 24px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  padding: 16px 0;
+  border-bottom: 1px solid var(--divider, rgba(255,255,255,0.06));
 }
 
 .comment-item:last-child {
-  margin-bottom: 0;
-  padding-bottom: 0;
   border-bottom: 0;
 }
 
@@ -70,7 +67,7 @@ defineEmits(['reply', 'like', 'delete', 'report'])
   justify-content: center;
   flex-shrink: 0;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border);
   color: #fff;
   font-size: 0.8125rem;
   font-weight: 700;
@@ -130,7 +127,7 @@ defineEmits(['reply', 'like', 'delete', 'report'])
 .comment-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 18px;
+  gap: 16px;
   margin-top: 12px;
 }
 
@@ -138,15 +135,18 @@ defineEmits(['reply', 'like', 'delete', 'report'])
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 0;
+  padding: 4px 8px;
   border: 0;
+  border-radius: var(--radius-pill);
   background: transparent;
   color: var(--text-3);
   font-size: 0.8125rem;
+  transition: color 0.2s, background 0.2s;
 }
 
 .act-btn:hover {
   color: var(--brand);
+  background: var(--bg-card);
 }
 
 .act-btn.active {

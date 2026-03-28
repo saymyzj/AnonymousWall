@@ -2,7 +2,6 @@ from rest_framework import serializers
 from .models import Comment
 
 
-ANON_LABELS = ['匿名A', '匿名B', '匿名C', '匿名D', '匿名E', '匿名F', '匿名G', '匿名H']
 ANON_COLORS = ['#7C5CFC', '#FF6B9D', '#34D399', '#60A5FA', '#FBBF24', '#F87171', '#A78BFA', '#FB923C']
 
 
@@ -30,9 +29,11 @@ class CommentSerializer(serializers.ModelSerializer):
         return self._user_map_cache
 
     def get_anon_label(self, obj):
+        if obj.identity and obj.identity.nickname:
+            return obj.identity.nickname
         user_map = self._get_user_map()
         idx = user_map.get(obj.author_id, 0)
-        return ANON_LABELS[idx % len(ANON_LABELS)]
+        return f'匿名用户#{idx + 1}'
 
     def get_anon_color(self, obj):
         user_map = self._get_user_map()
@@ -51,12 +52,14 @@ class CommentSerializer(serializers.ModelSerializer):
 
     def get_parent_label(self, obj):
         if obj.parent_id:
-            user_map = self._get_user_map()
-            idx = user_map.get(obj.parent.author_id, 0)
             post_author_id = self.context.get('post_author_id')
             if obj.parent.author_id == post_author_id:
                 return '楼主'
-            return ANON_LABELS[idx % len(ANON_LABELS)]
+            if obj.parent.identity and obj.parent.identity.nickname:
+                return obj.parent.identity.nickname
+            user_map = self._get_user_map()
+            idx = user_map.get(obj.parent.author_id, 0)
+            return f'匿名用户#{idx + 1}'
         return None
 
     def get_is_liked(self, obj):

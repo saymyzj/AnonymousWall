@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profile Hybrid Selector</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0b0d1a;
+    --panel: rgba(18,21,42,0.82);
+    --line: rgba(255,255,255,0.08);
+    --text-1: #ece9f7;
+    --text-2: #a49fb8;
+    --brand: #7c5cfc;
+    --pink: #ff6b9d;
+    --radius: 28px;
+    --pill: 999px;
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Noto Sans SC", sans-serif;
+  }
+  body {
+    min-height: 100vh;
+    font-family: var(--font);
+    color: var(--text-1);
+    background:
+      radial-gradient(circle at 80% 8%, rgba(124,92,252,0.22), transparent 25%),
+      radial-gradient(circle at 12% 92%, rgba(255,107,157,0.16), transparent 24%),
+      linear-gradient(180deg, #0a0d1b 0%, #090b16 100%);
+    padding: 44px 24px 60px;
+  }
+  .wrap {
+    width: min(1400px, 100%);
+    margin: 0 auto;
+  }
+  .header {
+    margin-bottom: 26px;
+  }
+  .header strong {
+    display: inline-block;
+    padding: 8px 14px;
+    border-radius: var(--pill);
+    border: 1px solid rgba(124,92,252,0.24);
+    background: rgba(124,92,252,0.1);
+    color: #d7ceff;
+    font-size: 13px;
+    margin-bottom: 14px;
+  }
+  h1 {
+    font-size: clamp(30px, 4vw, 48px);
+    line-height: 1.08;
+    margin-bottom: 10px;
+  }
+  .header p {
+    color: var(--text-2);
+    font-size: 16px;
+    line-height: 1.8;
+    max-width: 880px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+  }
+  .card {
+    padding: 18px;
+    border-radius: var(--radius);
+    border: 1px solid var(--line);
+    background: linear-gradient(180deg, rgba(18,21,42,0.9), rgba(12,14,28,0.96));
+    box-shadow: 0 22px 60px rgba(0,0,0,0.28);
+  }
+  .card h2 {
+    font-size: 20px;
+    margin-bottom: 8px;
+  }
+  .card p {
+    color: var(--text-2);
+    font-size: 14px;
+    line-height: 1.7;
+    min-height: 72px;
+    margin-bottom: 14px;
+  }
+  .actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 14px;
+    border-radius: var(--pill);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .btn-primary {
+    color: #fff;
+    background: linear-gradient(135deg, var(--brand), var(--pink));
+  }
+  .btn-secondary {
+    color: var(--text-1);
+    border: 1px solid var(--line);
+    background: rgba(255,255,255,0.04);
+  }
+  iframe {
+    width: 100%;
+    height: 420px;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 22px;
+    background: #090b15;
+  }
+  @media (max-width: 1100px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <strong>用户中心混合稿</strong>
+      <h1>B 的上半部分 + C 的下半部分，我先给你 3 个可选方向</h1>
+      <p>三版都保留了 B 的沉浸式大头像资料区，并把 C 的「最近发布 / 评论动态 / 收藏夹」放到下半部分。差异主要在于头部和内容区之间的衔接方式，以及整体的展示感强弱。</p>
+    </div>
+
+    <div class="grid">
+      <section class="card">
+        <h2>D · 稳妥落地版</h2>
+        <p>最贴近你当前描述。上半部分延续 B 的大面积主视觉，下半部分直接进入三栏内容区，后续最容易继续实现成真实页面。</p>
+        <div class="actions">
+          <a class="btn btn-primary" href="./profile-D-hero-bento.html" target="_blank">打开原型</a>
+          <a class="btn btn-secondary" href="./profile-B-tabs.html" target="_blank">对比 B</a>
+          <a class="btn btn-secondary" href="./profile-C-bento.html" target="_blank">对比 C</a>
+        </div>
+        <iframe src="./profile-D-hero-bento.html" title="Profile D preview"></iframe>
+      </section>
+
+      <section class="card">
+        <h2>E · 过渡层次版</h2>
+        <p>强化从「资料头图」进入「内容面板」的桥接感，更像完整的产品界面，适合你想让个人中心更精致、结构更清楚的路线。</p>
+        <div class="actions">
+          <a class="btn btn-primary" href="./profile-E-overlap-bento.html" target="_blank">打开原型</a>
+          <a class="btn btn-secondary" href="./profile-B-tabs.html" target="_blank">对比 B</a>
+          <a class="btn btn-secondary" href="./profile-C-bento.html" target="_blank">对比 C</a>
+        </div>
+        <iframe src="./profile-E-overlap-bento.html" title="Profile E preview"></iframe>
+      </section>
+
+      <section class="card">
+        <h2>F · 展示感增强版</h2>
+        <p>更像个人主页展台，适合你想把用户中心做得更有辨识度。仍然保留 C 的三类核心内容，但表达方式更“亮眼”。</p>
+        <div class="actions">
+          <a class="btn btn-primary" href="./profile-F-showcase-bento.html" target="_blank">打开原型</a>
+          <a class="btn btn-secondary" href="./profile-B-tabs.html" target="_blank">对比 B</a>
+          <a class="btn btn-secondary" href="./profile-C-bento.html" target="_blank">对比 C</a>
+        </div>
+        <iframe src="./profile-F-showcase-bento.html" title="Profile F preview"></iframe>
+      </section>
+    </div>
+  </div>
+</body>
+</html>

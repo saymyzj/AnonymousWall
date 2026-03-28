@@ -130,8 +130,8 @@ async function toggleLike() {
 
 .bubble:hover {
   transform: translateY(-4px);
-  border-color: rgba(255, 255, 255, 0.15);
-  box-shadow: 0 18px 46px var(--bubble-glow, rgba(255, 255, 255, 0.08));
+  border-color: var(--border-hover);
+  box-shadow: 0 18px 46px var(--bubble-glow, var(--glow-white));
 }
 
 .bubble-top {
@@ -149,8 +149,8 @@ async function toggleLike() {
   max-width: fit-content;
   padding: 5px 12px;
   border-radius: var(--radius-pill);
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
   color: var(--text-2);
   font-size: 0.75rem;
   font-weight: 600;
@@ -196,7 +196,7 @@ async function toggleLike() {
   aspect-ratio: 4 / 3;
   object-fit: cover;
   border-radius: var(--radius-img);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border);
 }
 
 .bubble-footer {

@@ -17,7 +17,7 @@
         <div class="wb-table-row">
           <div class="wb-table-top"><span>置顶帖 #{{ post.id }}</span><span class="wb-badge warn">到期 {{ post.pinned_until|date:"Y-m-d H:i" }}</span></div>
           <div class="wb-table-content">{{ post.content|truncatechars:72 }}</div>
-          <div class="wb-actions"><a class="wb-action ghost" href="/admin/posts/post/{{ post.id }}/change/">管理</a></div>
+          <div class="wb-actions"><a class="wb-action ghost" href="/admin/workbench/moderation/post/{{ post.id }}/">查看</a></div>
         </div>
       {% empty %}
         <div class="wb-empty">当前没有置顶帖。</div>

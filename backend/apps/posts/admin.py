@@ -3,6 +3,7 @@ from datetime import timedelta
 from django.contrib import admin
 from django.utils import timezone
 
+from common.admin_redirects import WorkbenchRedirectAdminMixin
 from apps.interactions.models import Notification, Report
 from apps.moderation.models import AuditLog
 
@@ -26,7 +27,9 @@ class PollInline(admin.StackedInline):
 
 
 @admin.register(Post)
-class PostAdmin(admin.ModelAdmin):
+class PostAdmin(WorkbenchRedirectAdminMixin, admin.ModelAdmin):
+    workbench_changelist_url = '/admin/workbench/content/?kind=post'
+
     inlines = [PostImageInline, PollInline]
     list_display = [
         'id', 'content_preview', 'tag', 'status', 'is_pinned',
@@ -144,6 +147,9 @@ class PostAdmin(admin.ModelAdmin):
     @admin.action(description='软删除选中帖子')
     def soft_delete_posts(self, request, queryset):
         queryset.update(is_deleted=True)
+
+    def get_workbench_object_url(self, object_id):
+        return f'/admin/workbench/moderation/post/{object_id}/'
 
 
 @admin.register(Announcement)

@@ -139,7 +139,6 @@ def user_center_view(request):
             metrics=metrics,
             actions=[
                 {'label': '去审核队列', 'url': WORKBENCH_URLS['review_queue'], 'tone': 'primary'},
-                {'label': '查看原始用户表单', 'url': '/admin/users/user/', 'tone': 'ghost'},
             ],
         ),
         **get_user_center(10),
@@ -152,17 +151,60 @@ def user_detail_view(request, user_id):
         user = User.objects.get(pk=user_id)
     except User.DoesNotExist:
         return redirect(WORKBENCH_URLS['user_center'])
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        reason = request.POST.get('reason', '').strip()
+
+        if action == 'verify':
+            user.is_verified = True
+            user.save(update_fields=['is_verified'])
+            AuditLog.objects.create(
+                auditor=request.user,
+                target_type='user',
+                target_id=user.id,
+                action='approve',
+                reason=reason or '管理员通过了用户认证',
+            )
+            return redirect(request.path)
+
+        if action in {'ban_7', 'ban_30', 'ban_forever'}:
+            days = None if action == 'ban_forever' else (7 if action == 'ban_7' else 30)
+            user.is_banned = True
+            user.ban_until = None if days is None else timezone.now() + timedelta(days=days)
+            user.save(update_fields=['is_banned', 'ban_until'])
+            AuditLog.objects.create(
+                auditor=request.user,
+                target_type='user',
+                target_id=user.id,
+                action='ban',
+                reason=reason or (f'管理员禁言 {days} 天' if days else '管理员永久禁言'),
+            )
+            return redirect(request.path)
+
+        if action == 'unban':
+            user.is_banned = False
+            user.ban_until = None
+            user.save(update_fields=['is_banned', 'ban_until'])
+            AuditLog.objects.create(
+                auditor=request.user,
+                target_type='user',
+                target_id=user.id,
+                action='approve',
+                reason=reason or '管理员解除禁言',
+            )
+            return redirect(request.path)
+
     metrics = get_admin_metrics()
     context = {
         **build_workbench_context(
             request,
             'user_center',
             f'用户中心 · {user.email}',
-            '围绕单个用户查看内容记录、通知与违规历史，避免在多个原始表单页之间跳转。',
+            '围绕单个用户查看内容记录、通知与违规历史，并直接完成认证、禁言与解禁处理。',
             metrics=metrics,
             actions=[
                 {'label': '返回用户中心', 'url': WORKBENCH_URLS['user_center'], 'tone': 'primary'},
-                {'label': '编辑原始用户表单', 'url': f'/admin/users/user/{user.id}/change/', 'tone': 'ghost'},
             ],
         ),
         **get_user_detail_snapshot(user),
@@ -322,7 +364,7 @@ def moderation_detail_view(request, target_type, target_id):
             request,
             'review_queue',
             f'审核详情 · {"帖子" if target_type == "post" else "评论"} #{target_id}',
-            '围绕单条内容完成审核决策、举报处理与用户处罚，并保留原始表单入口作为兜底。',
+            '围绕单条内容完成审核决策、举报处理与用户处罚，不再跳转回原始表单。',
             actions=[
                 {'label': '返回审核队列', 'url': WORKBENCH_URLS['review_queue'], 'tone': 'primary'},
                 {'label': '去举报中心', 'url': WORKBENCH_URLS['report_center'], 'tone': 'ghost'},

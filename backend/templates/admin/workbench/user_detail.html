@@ -11,10 +11,30 @@
 <section class="wb-card">
   <h2>用户档案</h2>
   <p>{{ user.email }} | {{ user.real_name|default:"未填写姓名" }} | {{ user.student_id|default:"未填写学号/工号" }}</p>
-  <div class="wb-actions">
-    <a class="wb-action ghost" href="/admin/users/user/{{ user.id }}/change/">编辑用户表单</a>
-    <a class="wb-action ghost" href="/admin/interactions/notification/?user__id__exact={{ user.id }}">查看通知记录</a>
-  </div>
+</section>
+
+<section class="wb-card">
+  <h2>账号处置</h2>
+  <p>管理员仅可在工作台执行认证、禁言和解禁操作。</p>
+  <form method="post" style="display:flex; flex-direction:column; gap:12px; margin-top:12px;">
+    {% csrf_token %}
+    <div class="wb-filter-field">
+      <label>处理说明</label>
+      <textarea name="reason" placeholder="补充处置原因（可选）"></textarea>
+    </div>
+    <div class="wb-actions" style="flex-wrap:wrap;">
+      {% if not user.is_verified %}
+        <button class="wb-action success" type="submit" name="action" value="verify">通过认证</button>
+      {% endif %}
+      {% if user.is_banned %}
+        <button class="wb-action" type="submit" name="action" value="unban">解除禁言</button>
+      {% else %}
+        <button class="wb-action warn" type="submit" name="action" value="ban_7">禁言 7 天</button>
+        <button class="wb-action warn" type="submit" name="action" value="ban_30">禁言 30 天</button>
+        <button class="wb-action danger" type="submit" name="action" value="ban_forever">永久禁言</button>
+      {% endif %}
+    </div>
+  </form>
 </section>
 
 <section class="wb-split">
@@ -57,21 +77,27 @@
   </div>
 </section>
 
-{% if notifications %}
 <section class="wb-card">
-  <h2>最近通知</h2>
-  <div class="wb-table-list">
-    {% for item in notifications %}
-      <div class="wb-table-row">
-        <div class="wb-table-top">
-          <span>{{ item.title }}</span>
-          <span class="wb-badge">{{ item.get_type_display }}</span>
+  <details class="wb-disclosure">
+    <summary class="wb-disclosure-summary">
+      <span>通知记录</span>
+      <span class="wb-badge">{{ notifications|length }} 条</span>
+    </summary>
+    <p class="wb-disclosure-intro">直接在当前用户中心展开查看最近通知，无需跳转到原始通知列表。</p>
+    <div class="wb-table-list">
+      {% for item in notifications %}
+        <div class="wb-table-row">
+          <div class="wb-table-top">
+            <span>{{ item.title }}</span>
+            <span class="wb-badge">{{ item.get_type_display }}</span>
+          </div>
+          <div class="wb-table-content">{{ item.content }}</div>
+          <div class="wb-table-meta">{{ item.created_at|date:"Y-m-d H:i" }}</div>
         </div>
-        <div class="wb-table-content">{{ item.content }}</div>
-        <div class="wb-table-meta">{{ item.created_at|date:"Y-m-d H:i" }}</div>
-      </div>
-    {% endfor %}
-  </div>
+      {% empty %}
+        <div class="wb-empty">当前没有通知记录。</div>
+      {% endfor %}
+    </div>
+  </details>
 </section>
-{% endif %}
 {% endblock %}

@@ -380,7 +380,7 @@ async function handleSubmit() {
   margin-bottom: 32px;
   padding: 4px;
   border-radius: var(--radius-pill);
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--bg-card);
 }
 
 .tab-pill {
@@ -416,7 +416,7 @@ async function handleSubmit() {
   padding: 0 18px;
   border-radius: 16px;
   border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--bg-card);
   color: var(--text-1);
   outline: none;
 }
@@ -457,7 +457,7 @@ async function handleSubmit() {
 .strength-seg {
   flex: 1;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--bg-card-hover);
 }
 
 .strength-seg.weak {

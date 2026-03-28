@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.utils import timezone
 
+from common.admin_redirects import WorkbenchRedirectAdminMixin
 from apps.interactions.models import Notification
 from apps.moderation.models import AuditLog
 
@@ -8,7 +9,9 @@ from .models import Comment
 
 
 @admin.register(Comment)
-class CommentAdmin(admin.ModelAdmin):
+class CommentAdmin(WorkbenchRedirectAdminMixin, admin.ModelAdmin):
+    workbench_changelist_url = '/admin/workbench/content/?kind=comment'
+
     list_display = ['id', 'content_preview', 'post', 'author_email', 'status', 'risk_level_display', 'review_deadline', 'ai_decision_display', 'like_count', 'created_at']
     list_filter = ['status', 'created_at']
     search_fields = ['content', 'author__email', 'identity__nickname', 'ai_reason']
@@ -83,3 +86,6 @@ class CommentAdmin(admin.ModelAdmin):
     def mark_normal(self, request, queryset):
         queryset.update(status='normal', moderation_source='manual', reviewed_at=timezone.now(), review_deadline=None)
         self._log_bulk_action(request, queryset, 'approve', '管理员在后台恢复了评论')
+
+    def get_workbench_object_url(self, object_id):
+        return f'/admin/workbench/moderation/comment/{object_id}/'
