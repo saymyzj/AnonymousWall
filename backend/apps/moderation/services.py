@@ -99,6 +99,17 @@ def _extract_json_payload(content):
     return json.loads(normalized)
 
 
+def _build_ssl_context():
+    """Create a TLS context that tolerates missing custom cert paths in FC."""
+    cafile = (os.environ.get('SSL_CERT_FILE') or '').strip()
+    if cafile:
+        try:
+            return ssl.create_default_context(cafile=cafile)
+        except Exception:
+            pass
+    return ssl.create_default_context()
+
+
 def audit_with_deepseek(text, content_type='post'):
     api_key = getattr(settings, 'DEEPSEEK_API_KEY', '')
     model = getattr(settings, 'DEEPSEEK_MODEL', 'deepseek-chat')
@@ -149,8 +160,7 @@ def audit_with_deepseek(text, content_type='post'):
     )
 
     try:
-        cafile = os.environ.get('SSL_CERT_FILE') or '/etc/ssl/cert.pem'
-        ssl_context = ssl.create_default_context(cafile=cafile)
+        ssl_context = _build_ssl_context()
 
         with urllib.request.urlopen(request, timeout=timeout, context=ssl_context) as response:
             raw = json.loads(response.read().decode('utf-8'))
@@ -191,7 +201,15 @@ def audit_with_deepseek(text, content_type='post'):
             'reason': reason,
             'model': model,
         }
-    except (urllib.error.URLError, TimeoutError, KeyError, json.JSONDecodeError, IndexError):
+    except (urllib.error.URLError, TimeoutError, KeyError, json.JSONDecodeError, IndexError, ssl.SSLError, ValueError, FileNotFoundError):
+        return {
+            'enabled': True,
+            'decision': 'confuse',
+            'risk_level': 'medium',
+            'reason': 'AI 审核调用失败，已自动转入人工复核',
+            'model': model,
+        }
+    except Exception:
         return {
             'enabled': True,
             'decision': 'confuse',

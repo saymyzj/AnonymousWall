@@ -29,6 +29,19 @@ def health_check(request):
     return APIResponse(data={'status': 'ok'}, message='匿名宇宙 API is running')
 
 
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def deploy_info(request):
+    return APIResponse(
+        data={
+            'build': settings.APP_BUILD_MARKER,
+            'middleware': 'api-exception-logging-v1',
+            'debug': settings.DEBUG,
+        },
+        message='deploy info',
+    )
+
+
 urlpatterns = [
     path('admin/workbench/dashboard/', admin.site.admin_view(dashboard_view), name='admin_dashboard'),
     path('admin/workbench/content/', admin.site.admin_view(content_center_view), name='admin_content_center'),
@@ -41,6 +54,7 @@ urlpatterns = [
     path('admin/workbench/recommendation/', admin.site.admin_view(recommendation_center_view), name='admin_recommendation_center'),
     path('admin/', admin.site.urls),
     path('api/health/', health_check),
+    path('api/deploy-info/', deploy_info),
     path('api/auth/', include('apps.users.urls')),
     path('api/', include('apps.posts.urls')),
     path('api/', include('apps.comments.urls')),

@@ -2,8 +2,17 @@ import axios from 'axios'
 import { useAuthStore } from '../stores/auth'
 import router from '../router'
 
+function resolveApiBaseUrl() {
+  const configured = import.meta.env.VITE_API_BASE_URL?.trim()
+  if (!configured) {
+    return '/api'
+  }
+
+  return configured.endsWith('/api') ? configured : `${configured.replace(/\/+$/, '')}/api`
+}
+
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: resolveApiBaseUrl(),
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',

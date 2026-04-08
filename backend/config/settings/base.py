@@ -19,6 +19,8 @@ def load_local_env(*paths):
 
 load_local_env(BASE_DIR / '.env', BASE_DIR / '.env.local')
 
+APP_BUILD_MARKER = os.environ.get('APP_BUILD_MARKER', 'deploy-check-2026-04-08-v1')
+
 SECRET_KEY = 'django-insecure-kai)w!52_qk9p!)(6@3v5xm-21dxwg)d=vtz9met%r&-h66g#k'
 
 ALLOWED_HOSTS = []
@@ -45,6 +47,8 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
+    'common.error_logging.ApiExceptionLoggingMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -87,9 +91,11 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # DRF
 REST_FRAMEWORK = {

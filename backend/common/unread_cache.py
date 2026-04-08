@@ -29,7 +29,8 @@ def get_unread_summary(user) -> dict[str, int]:
                     'notifications': int(cached[0]),
                     'messages': int(cached[1]),
                 }
-        except (RedisUnavailable, OSError, ValueError, TypeError):
+        # Cache failures should never break the core product flow.
+        except Exception:
             pass
 
     summary = recalculate_unread_summary(user)
@@ -58,7 +59,7 @@ def cache_unread_summary(user_id: int, notifications: int, messages: int):
         ttl = _cache_ttl()
         client.set(_notification_key(user_id), int(notifications), ex=ttl)
         client.set(_message_key(user_id), int(messages), ex=ttl)
-    except (RedisUnavailable, OSError, ValueError, TypeError):
+    except Exception:
         return
 
 
@@ -68,7 +69,7 @@ def set_notification_unread_count(user_id: int, count: int):
         return
     try:
         client.set(_notification_key(user_id), int(count), ex=_cache_ttl())
-    except (RedisUnavailable, OSError, ValueError, TypeError):
+    except Exception:
         return
 
 
@@ -78,7 +79,7 @@ def set_message_unread_count(user_id: int, count: int):
         return
     try:
         client.set(_message_key(user_id), int(count), ex=_cache_ttl())
-    except (RedisUnavailable, OSError, ValueError, TypeError):
+    except Exception:
         return
 
 
@@ -88,7 +89,7 @@ def invalidate_notification_unread(user_id: int):
         return
     try:
         client.delete(_notification_key(user_id))
-    except (RedisUnavailable, OSError):
+    except Exception:
         return
 
 
@@ -98,5 +99,5 @@ def invalidate_message_unread(user_id: int):
         return
     try:
         client.delete(_message_key(user_id))
-    except (RedisUnavailable, OSError):
+    except Exception:
         return
